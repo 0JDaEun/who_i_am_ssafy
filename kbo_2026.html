@@ -1,0 +1,2554 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <title>2026 KBO 승률 저장소 - 어제의 패배도, 내일의 도약도 한눈에</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js CDN for interactive graphs -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- FontAwesome for Sports and Modern Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Web Fonts Support (Pretendard) -->
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        // CSS 변수 기반으로 실시간 테마 컬러 바인딩 (Tailwind 유틸리티 완벽 지원)
+                        brandBlue: 'var(--brand-primary, #0052CC)',     
+                        brandOrange: 'var(--brand-secondary, #FF6B00)',   
+                        stadiumLight: '#F8FAFC',
+                        cardWhite: '#FFFFFF',
+                        borderLight: '#E2E8F0'
+                    },
+                    fontFamily: {
+                        title: ['Gmarket Sans', 'Pretendard', 'system-ui', 'sans-serif'],
+                        sans: ['Pretendard', 'system-ui', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@600&family=Montserrat:wght@800&family=Noto+Sans+KR:wght@700;900&display=swap');
+        
+        :root {
+            /* 초기 기본 테마 (KBO 공식 에너제틱 블루 & 오렌지) */
+            --brand-primary: #0052CC;
+            --brand-secondary: #FF6B00;
+        }
+
+        .font-title {
+            font-family: 'Noto Sans KR', 'Montserrat', sans-serif;
+            font-weight: 900;
+        }
+        
+        html {
+            scroll-behavior: smooth;
+        }
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #F8FAFC;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--brand-primary, #0052CC);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--brand-secondary, #FF6B00);
+        }
+
+        /* 가상 멀티 페이지 트랜지션 */
+        .page-view {
+            display: none;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+        .page-view.active {
+            display: block;
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* 3D 플래시 카드 뒤집기 */
+        .perspective {
+            perspective: 1000px;
+        }
+        .preserve-3d {
+            transform-style: preserve-3d;
+            transition: transform 0.6s;
+        }
+        .flipped {
+            transform: rotateY(180deg);
+        }
+        .backface-hidden {
+            backface-visibility: hidden;
+        }
+        .rotate-y-180 {
+            transform: rotateY(180deg);
+        }
+
+        /* 테마 컬러 연동 배경 트랜지션 */
+        .theme-bg-transition {
+            transition: background-color 0.4s ease, border-color 0.4s ease, color 0.4s ease;
+        }
+    </style>
+</head>
+<body class="bg-white text-slate-800 font-sans overflow-x-hidden min-h-screen flex flex-col justify-between">
+
+    <!-- NAVIGATION BAR -->
+    <nav class="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <!-- Logo -->
+                <div class="flex items-center gap-2">
+                    <a href="#home" class="flex items-center gap-2">
+                        <span class="text-2xl text-brandOrange theme-bg-transition" id="navLogoIcon"><i class="fa-solid fa-baseball-bat-ball"></i></span>
+                        <span class="font-title text-xl tracking-tight bg-gradient-to-r from-brandBlue to-brandOrange bg-clip-text text-transparent theme-bg-transition" id="navLogoText">
+                            KBO 2026 승률 저장소
+                        </span>
+                    </a>
+                </div>
+                
+                <!-- Desktop Navigation Menu -->
+                <div class="hidden lg:flex items-center space-x-2 text-sm font-semibold text-slate-600" id="navLinks">
+                    <a href="#home" class="nav-item hover:text-brandBlue transition-colors px-3 py-2 rounded-lg" data-page="home">홈</a>
+                    <a href="#teams" class="nav-item hover:text-brandBlue transition-colors px-3 py-2 rounded-lg" data-page="teams">10개 구단 소개</a>
+                    <a href="#rollercoaster" class="nav-item hover:text-brandBlue transition-colors px-3 py-2 rounded-lg" data-page="rollercoaster">승률 롤러코스터</a>
+                    <a href="#schedule" class="nav-item hover:text-brandBlue transition-colors px-3 py-2 rounded-lg" data-page="schedule">경기 일정</a>
+                    <a href="#beginner" class="nav-item hover:text-brandBlue transition-colors px-3 py-2 rounded-lg" data-page="beginner">야구 초보 탈출 패스</a>
+                    <a href="#quiz" class="nav-item hover:text-brandBlue transition-colors px-3 py-2 rounded-lg" data-page="quiz">팬 성향 테스트</a>
+                </div>
+                
+                <!-- Action Tools -->
+                <div class="flex items-center gap-2">
+                    <div id="navMyTeamBadge" class="hidden"></div>
+
+                    <!-- My Team Select Dropdown (Nav) -->
+                    <select id="myTeamSelectNav" onchange="selectMyTeam(this.value)" class="text-xs bg-slate-100 border border-slate-200 rounded-lg p-1.5 font-bold focus:outline-none focus:border-brandBlue">
+                        <option value="">마이팀 선택</option>
+                        <option value="kia">KIA 타이거즈 🐯</option>
+                        <option value="samsung">삼성 라이온즈 🦁</option>
+                        <option value="lg">LG 트윈스 ⚾</option>
+                        <option value="doosan">두산 베어스 🐻</option>
+                        <option value="lotte">롯데 자이언츠 ⚓</option>
+                        <option value="hanwha">한화 이글스 🦅</option>
+                        <option value="ssg">SSG 랜더스 🚀</option>
+                        <option value="nc">NC 다이노스 🦕</option>
+                        <option value="kt">KT 위즈 🧙</option>
+                        <option value="kiwoom">키움 히어로즈 🦸</option>
+                    </select>
+
+                    <button onclick="playStadiumChant()" class="bg-brandOrange/10 text-brandOrange hover:bg-brandOrange/20 font-bold p-2.5 rounded-full text-xs transition-transform transform hover:scale-105" title="응원단 함성 재생">
+                        <i class="fa-solid fa-volume-high"></i>
+                    </button>
+                    <!-- Mobile Hamburger Toggle -->
+                    <button onclick="toggleMobileMenu()" class="lg:hidden text-slate-600 p-2 text-xl" id="menuBtn">
+                        <i class="fa-solid fa-bars"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <!-- Mobile Dropdown Menu -->
+        <div id="mobileMenu" class="hidden lg:hidden bg-white border-b border-slate-200 px-4 py-3 space-y-2">
+            <a href="#home" onclick="closeMobileMenu()" class="block py-2 text-sm font-semibold text-slate-700 hover:text-brandBlue">홈</a>
+            <a href="#teams" onclick="closeMobileMenu()" class="block py-2 text-sm font-semibold text-slate-700 hover:text-brandBlue">10개 구단 소개</a>
+            <a href="#rollercoaster" onclick="closeMobileMenu()" class="block py-2 text-sm font-semibold text-slate-700 hover:text-brandBlue">승률 롤러코스터</a>
+            <a href="#schedule" onclick="closeMobileMenu()" class="block py-2 text-sm font-semibold text-slate-700 hover:text-brandBlue">경기 일정</a>
+            <a href="#beginner" onclick="closeMobileMenu()" class="block py-2 text-sm font-semibold text-slate-700 hover:text-brandBlue">야구 초보 탈출 패스</a>
+            <a href="#quiz" onclick="closeMobileMenu()" class="block py-2 text-sm font-semibold text-slate-700 hover:text-brandBlue">팬 성향 테스트</a>
+        </div>
+    </nav>
+
+    <!-- MAIN CONTAINER FOR VIRTUAL PAGE VIEWS -->
+    <main class="flex-grow pt-4 pb-12">
+
+        <!-- ==================== 1. HOME VIRTUAL PAGE ==================== -->
+        <section id="view-home" class="page-view px-4 max-w-7xl mx-auto active">
+            <!-- Hero Header Section -->
+            <div class="relative bg-white border border-slate-200 rounded-3xl p-6 sm:p-12 shadow-sm overflow-hidden mb-8">
+                <div class="absolute inset-0 bg-[linear-gradient(to_right,#0052cc03_1px,transparent_1px),linear-gradient(to_bottom,#0052cc05_1px,transparent_1px)] bg-[size:2rem_2rem]"></div>
+                <div class="relative z-10 text-center max-w-4xl mx-auto">
+                    <span class="inline-flex items-center gap-2 bg-blue-100/50 text-brandBlue px-4 py-1 rounded-full text-xs font-bold mb-4 theme-bg-transition" id="heroBadge">
+                        <span class="w-2.5 h-2.5 rounded-full bg-brandOrange animate-ping theme-bg-transition" id="heroBadgeDot"></span> 2026 KBO 리그 정밀 대시보드
+                    </span>
+                    <h1 class="font-title text-3xl sm:text-5xl lg:text-6xl tracking-tight leading-tight text-slate-900 mb-4">
+                        어제의 패배도, 내일의 도약도 한눈에<br />
+                        <span class="bg-gradient-to-r from-brandBlue to-brandOrange bg-clip-text text-transparent theme-bg-transition" id="heroGradientTitle">우리 팀 승률 저장소</span>
+                    </h1>
+                    <p class="text-slate-500 text-sm sm:text-base mb-6 max-w-2xl mx-auto">
+                        퇴근길 번거로운 검색 없이 클릭 한 번으로 끝내는 야구 분석실.<br>
+                        10초 만에 완벽하게 숙지하는 실시간 흐름과 변곡점 영웅들의 활약을 만나보세요.
+                    </p>
+
+                    <!-- Hero My Team Selector -->
+                    <div class="bg-slate-50 border border-slate-100 p-4 rounded-2xl max-w-sm mx-auto mb-8">
+                        <label for="myTeamSelectHero" class="block text-xs font-bold text-slate-500 mb-2">🎯 마이팀 선택 시 사이트 전체 전용 데코 테마 전환</label>
+                        <select id="myTeamSelectHero" onchange="selectMyTeam(this.value)" class="w-full text-sm bg-white border border-slate-200 rounded-xl p-2.5 font-bold focus:outline-none focus:border-brandBlue">
+                            <option value="">마이팀을 선택하세요</option>
+                            <option value="kia">KIA 타이거즈 🐯</option>
+                            <option value="samsung">삼성 라이온즈 🦁</option>
+                            <option value="lg">LG 트윈스 ⚾</option>
+                            <option value="doosan">두산 베어스 🐻</option>
+                            <option value="lotte">롯데 자이언츠 ⚓</option>
+                            <option value="hanwha">한화 이글스 🦅</option>
+                            <option value="ssg">SSG 랜더스 🚀</option>
+                            <option value="nc">NC 다이노스 🦕</option>
+                            <option value="kt">KT 위즈 🧙</option>
+                            <option value="kiwoom">키움 히어로즈 🦸</option>
+                        </select>
+                    </div>
+
+                    <div class="flex flex-wrap justify-center gap-3">
+                        <a href="#rollercoaster" class="bg-brandOrange hover:opacity-90 text-white font-extrabold text-xs sm:text-sm px-6 py-3 rounded-xl shadow-md transition-all transform hover:-translate-y-0.5 theme-bg-transition" id="btnHeroGraph">
+                            승률 그래프 탐험하기 <i class="fa-solid fa-chart-line ml-1.5"></i>
+                        </a>
+                        <a href="#quiz" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs sm:text-sm px-6 py-3 rounded-xl transition-all">
+                            나의 응원 성향 분석 <i class="fa-solid fa-face-smile ml-1.5"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Gamification Poll / Challenge -->
+            <div class="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm mb-8 relative overflow-hidden">
+                <div class="flex flex-col lg:flex-row items-center justify-between gap-6">
+                    <div class="text-left">
+                        <span class="inline-flex items-center gap-1 bg-orange-100 text-brandOrange text-[11px] font-extrabold px-3 py-1 rounded-full mb-2 theme-bg-transition" id="pollHeaderBadge">
+                            <i class="fa-solid fa-trophy"></i> 실시간 승률 대예측 🗳️
+                        </span>
+                        <h3 class="font-title text-xl text-slate-900">"삼성이 올스타전 이후 끝까지 1위를 수성할 수 있을까?"</h3>
+                        <p class="text-xs text-slate-500 mt-1">예측에 도전하여 브라우저 저장소 배지를 활성화해 보세요!</p>
+                    </div>
+                    <div id="challengeVoteContainer" class="flex gap-2 w-full lg:w-auto flex-shrink-0">
+                        <button onclick="submitChallengeVote('yes')" class="flex-grow lg:flex-none bg-brandBlue hover:opacity-90 text-white font-black text-xs px-5 py-3 rounded-xl transition-all theme-bg-transition" id="btnVoteYes">
+                            끝까지 수성한다! 🦁
+                        </button>
+                        <button onclick="submitChallengeVote('no')" class="flex-grow lg:flex-none bg-slate-100 hover:bg-slate-200 text-slate-700 font-black text-xs px-5 py-3 rounded-xl transition-all">
+                            다른 팀의 대역전극! ⚡
+                        </button>
+                    </div>
+                    <!-- Unlocked Badge Spot -->
+                    <div id="unlockedBadgeBox" class="hidden flex flex-col items-center gap-1 bg-amber-50 border border-amber-200 p-3 rounded-2xl w-full lg:w-auto">
+                        <div class="w-10 h-10 bg-amber-400 rounded-full flex items-center justify-center text-white text-lg shadow-sm animate-bounce">
+                            <i class="fa-solid fa-star"></i>
+                        </div>
+                        <span class="text-[9px] text-amber-800 font-black tracking-wider uppercase">KBO 정밀 분석 마스터</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mini Live Rankings Card (Realistic 2026 Season Standing) -->
+            <div class="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm">
+                <h3 class="font-title text-lg text-slate-900 mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-list-ol text-brandBlue theme-bg-transition" id="rankSectionIcon"></i> 2026 KBO 리그 정규시즌 마감 순위표 (7월 10일 기준)
+                </h3>
+                <div class="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                    <div class="bg-blue-50/50 p-4 rounded-2xl border border-blue-100 text-center theme-bg-transition" id="rankFirstPlaceBox">
+                        <span class="text-[10px] text-brandBlue font-extrabold block theme-bg-transition" id="rankFirstPlaceBadge">1위 수성</span>
+                        <span class="font-title text-sm text-slate-800 block my-1">삼성 라이온즈</span>
+                        <span class="text-xs text-slate-500 font-bold">승률 .614</span>
+                    </div>
+                    <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100 text-center">
+                        <span class="text-[10px] text-slate-400 font-bold block">2위</span>
+                        <span class="font-title text-sm text-slate-800 block my-1">LG 트윈스</span>
+                        <span class="text-xs text-slate-500 font-bold">승률 .612</span>
+                    </div>
+                    <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100 text-center">
+                        <span class="text-[10px] text-slate-400 font-bold block">3위</span>
+                        <span class="font-title text-sm text-slate-800 block my-1">KT 위즈</span>
+                        <span class="text-xs text-slate-500 font-bold">승률 .573</span>
+                    </div>
+                    <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100 text-center">
+                        <span class="text-[10px] text-slate-400 font-bold block">4위</span>
+                        <span class="font-title text-sm text-slate-800 block my-1">KIA 타이거즈</span>
+                        <span class="text-xs text-slate-500 font-bold">승률 .536</span>
+                    </div>
+                    <div class="bg-orange-50/50 p-4 rounded-2xl border border-orange-100 text-center flex flex-col justify-center theme-bg-transition" id="rankDataSyncBox">
+                        <span class="text-[9px] text-brandOrange font-extrabold uppercase theme-bg-transition" id="rankDataSyncText">DATA SYNC</span>
+                        <span class="font-title text-xs text-slate-700 block my-0.5">정규 리그 검증</span>
+                        <span class="text-[9px] text-slate-400">공식 데이터 검증 완료</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== 2. TEAMS VIRTUAL PAGE ==================== -->
+        <section id="view-teams" class="page-view px-4 max-w-7xl mx-auto">
+            <div class="text-center mb-8">
+                <h2 class="font-title text-3xl text-slate-900 mb-2">2026 KBO 10개 구단 MVP 스타 백과</h2>
+                <p class="text-sm text-slate-500 max-w-xl mx-auto">구단 카드의 각 선수를 클릭하면 2026 시즌 실황 데이터와 활약상을 즉석에서 불러옵니다.</p>
+            </div>
+
+            <!-- Filter Badges -->
+            <div class="flex flex-wrap justify-center gap-2 mb-8" id="teamFilterContainer">
+                <button onclick="filterTeam('all')" class="team-filter-btn px-4 py-2 rounded-full text-xs font-bold transition-all bg-brandBlue text-white shadow-sm theme-bg-transition" id="btnFilterAll" data-team="all">전체 구단</button>
+            </div>
+
+            <!-- Team Grid Container -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="teamsGrid">
+                <!-- Dynamically populated via JS -->
+            </div>
+        </section>
+
+        <!-- PLAYER INTERACTIVE PROFILE MODAL CARD -->
+        <div id="playerModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 opacity-0 pointer-events-none transition-all duration-300">
+            <div class="bg-white rounded-3xl max-w-md w-full overflow-hidden shadow-2xl transform scale-95 transition-all duration-300 border border-slate-100">
+                <div class="bg-gradient-to-r from-brandBlue to-blue-800 p-5 flex justify-between items-center text-white theme-bg-transition" id="modalHeader">
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-id-card text-lg text-brandOrange animate-pulse theme-bg-transition" id="modalHeaderIcon"></i>
+                        <span class="font-title text-sm tracking-wide">2026 KBO HERO PROFILE</span>
+                    </div>
+                    <button onclick="closePlayerModal()" class="text-white/80 hover:text-white text-xl">
+                        <i class="fa-solid fa-circle-xmark"></i>
+                    </button>
+                </div>
+                <div class="p-6">
+                    <div class="flex flex-col sm:flex-row items-center sm:items-start gap-4 text-center sm:text-left">
+                        <div class="w-24 h-24 rounded-2xl bg-gradient-to-tr from-brandBlue/10 to-brandOrange/10 flex items-center justify-center border border-slate-100 relative shrink-0">
+                            <i class="fa-solid fa-user-ninja text-4xl text-brandBlue theme-bg-transition" id="modalHeroAvatar"></i>
+                            <div class="absolute -bottom-1.5 bg-brandOrange text-white text-[9px] px-2 py-0.5 rounded-full font-black uppercase theme-bg-transition" id="modalPlayerPos">외야수</div>
+                        </div>
+                        <div>
+                            <div class="flex flex-col sm:flex-row items-center sm:items-baseline gap-1">
+                                <h3 class="font-title text-2xl text-slate-800" id="modalPlayerName">손아섭</h3>
+                                <span class="text-xs font-bold text-brandOrange theme-bg-transition" id="modalPlayerTeam">NC 다이노스</span>
+                            </div>
+                            <p class="text-xs text-slate-400 mt-1" id="modalPlayerHighlight">스펙타클 2026 핵심 수훈</p>
+                            <div class="grid grid-cols-3 gap-2 mt-4" id="modalPlayerStatsContainer">
+                                <!-- Dynamic Stats Injected Here -->
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Performance Charts -->
+                    <div class="mt-6 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                        <span class="text-xs font-bold text-slate-500 block mb-2"><i class="fa-solid fa-chart-line mr-1 text-brandBlue theme-bg-transition" id="modalChartTitleIcon"></i> 2026 전반기 정밀 기여 지표</span>
+                        <div class="space-y-2">
+                            <div>
+                                <div class="flex justify-between text-[11px] text-slate-500">
+                                    <span>승리 기여도 (WAR)</span>
+                                    <span class="font-bold text-slate-800" id="statWarText">5.42</span>
+                                </div>
+                                <div class="w-full bg-slate-200 rounded-full h-1.5 mt-0.5">
+                                    <div id="statWarBar" class="bg-brandBlue h-1.5 rounded-full theme-bg-transition" style="width: 85%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-[11px] text-slate-500">
+                                    <span>클러치 집중력 (Clutch)</span>
+                                    <span class="font-bold text-slate-800" id="statClutchText">A+</span>
+                                </div>
+                                <div class="w-full bg-slate-200 rounded-full h-1.5 mt-0.5">
+                                    <div id="statClutchBar" class="bg-brandOrange h-1.5 rounded-full theme-bg-transition" style="width: 90%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-slate-50 p-4 flex justify-end gap-2 border-t border-slate-100">
+                    <button onclick="closePlayerModal()" class="px-4 py-2 rounded-lg bg-slate-200 text-slate-700 text-xs font-bold hover:bg-slate-300">닫기</button>
+                    <a id="modalHighlightLink" href="#rollercoaster" class="px-4 py-2 rounded-lg bg-brandBlue text-white text-xs font-bold hover:opacity-90 theme-bg-transition">승률 기여 모니터링</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== 3. ROLLERCOASTER GRAPH VIRTUAL PAGE ==================== -->
+        <section id="view-rollercoaster" class="page-view px-4 max-w-7xl mx-auto">
+            <div class="text-center mb-6">
+                <span class="bg-brandOrange/10 text-brandOrange text-xs font-bold px-4 py-1.5 rounded-full uppercase tracking-wider mb-2 inline-block theme-bg-transition" id="chartRoomBadge">WIN-RATE CHART ROOM</span>
+                <h2 class="font-title text-3xl text-slate-900">2026 KBO 10개 구단 전체 승률 롤러코스터</h2>
+                <p class="text-sm text-slate-500 max-w-2xl mx-auto mt-2">
+                    차트 상단의 구단을 클릭하여 원하는 라인만 토글할 수 있으며,<br>
+                    라인의 <strong class="text-brandOrange theme-bg-transition" id="strongTextMarker1">별 마커(변곡점)</strong>나 <strong class="text-brandBlue theme-bg-transition" id="strongTextMarker2">다이아몬드 마커(교차점)</strong>를 직접 누르시면 상세 비주얼 패널과 소통 피드가 연동됩니다.
+                </p>
+            </div>
+
+            <!-- Chart Station Panel -->
+            <div class="bg-white border border-slate-200 rounded-3xl p-4 sm:p-6 shadow-sm mb-8 relative">
+                <!-- Zoom and Controls Overlay -->
+                <div class="absolute top-4 right-4 z-10 flex gap-1">
+                    <button onclick="zoomChart(1.2)" class="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold border border-slate-200 shadow-sm flex items-center justify-center text-xs" title="확대"><i class="fa-solid fa-magnifying-glass-plus"></i></button>
+                    <button onclick="zoomChart(0.8)" class="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold border border-slate-200 shadow-sm flex items-center justify-center text-xs" title="축소"><i class="fa-solid fa-magnifying-glass-minus"></i></button>
+                    <button onclick="resetChartZoom()" class="px-2.5 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold border border-slate-200 shadow-sm flex items-center justify-center text-xs" title="초기화">초기화</button>
+                </div>
+
+                <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-4 pb-4 border-b border-slate-100">
+                    <div>
+                        <span class="text-xs text-slate-400 block mb-1">범례를 선택해 그래프 선을 ON/OFF 해보세요 (10개 구단 완벽 구현)</span>
+                        <div class="flex flex-wrap gap-1.5" id="chartLegendContainer"></div>
+                    </div>
+                    <div class="flex items-center gap-2 flex-shrink-0 self-end lg:self-center pr-24 sm:pr-0">
+                        <button onclick="syncNaverSportsAPI()" class="bg-emerald-50 text-emerald-800 hover:bg-emerald-100 text-xs font-extrabold px-4 py-2.5 rounded-xl border border-emerald-200 flex items-center gap-2 shadow-sm transition-all">
+                            <span id="syncSpinner" class="hidden animate-spin"><i class="fa-solid fa-arrows-rotate"></i></span>
+                            <span id="syncStaticIcon"><i class="fa-solid fa-arrows-rotate"></i></span>
+                            <span id="syncBtnText">네이버 실시간 데이터 동기화</span>
+                        </button>
+                        <span id="syncTimeBadge" class="bg-slate-100 text-slate-500 text-[10px] font-bold px-3 py-2.5 rounded-xl border border-slate-200">데이터 검증: 10분 전</span>
+                    </div>
+                </div>
+
+                <!-- Main Chart Wrapper -->
+                <div class="relative w-full h-[380px] sm:h-[500px]">
+                    <canvas id="kboRollercoasterChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Split Layout: Tactical Video / Highlight Station & Live Comments -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                
+                <!-- Left: Video & Inflection Card (7 Columns) -->
+                <div class="lg:col-span-7 space-y-6">
+                    <!-- Inflection Point Data Display -->
+                    <div id="inflectionDisplayArea" class="hidden transition-all">
+                        <div class="bg-gradient-to-r from-blue-50/50 to-white border border-brandOrange rounded-2xl p-5 shadow-sm relative theme-bg-transition" id="inflectionOuterCard">
+                            <div class="flex justify-between items-start mb-3">
+                                <div>
+                                    <span class="bg-brandOrange text-white text-[10px] font-black px-3 py-1 rounded-full uppercase theme-bg-transition" id="inflectionBadge"><i class="fa-solid fa-crown mr-1"></i> 포커스 분석 데이터</span>
+                                    <h3 class="font-title text-lg text-slate-900 mt-2" id="inflectionTitle">변곡점 타이틀</h3>
+                                </div>
+                                <button onclick="closeInflectionCard()" class="text-slate-400 hover:text-slate-600 text-lg"><i class="fa-solid fa-xmark"></i></button>
+                            </div>
+                            <div class="bg-white p-4 rounded-xl border border-slate-100 text-xs">
+                                <div class="flex flex-wrap justify-between gap-1 mb-2">
+                                    <span class="text-brandOrange font-bold theme-bg-transition" id="inflectionDateSpan"><i class="fa-regular fa-clock"></i> 매칭 일자: <span id="inflectionDate">-</span></span>
+                                    <span class="text-emerald-600 font-extrabold">승률 변동폭: <span id="inflectionImpact">+0.000</span></span>
+                                </div>
+                                <h4 class="font-bold text-slate-800 text-sm mb-1" id="inflectionMatchSummary">대결 요약</h4>
+                                <p class="text-slate-500 leading-relaxed" id="inflectionStory">내용을 불러오고 있습니다.</p>
+                                <div class="mt-3 pt-2 border-t border-slate-100 text-slate-400">수훈 핵심 플레이어: <strong class="text-slate-700" id="inflectionMvpName">-</strong></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Dual-Mode Interactive Video / Tactical Board Module -->
+                    <div class="bg-white border border-slate-200 rounded-3xl p-5 shadow-sm">
+                        <div class="flex justify-between items-center mb-4">
+                            <div class="flex items-center gap-2">
+                                <i class="fa-brands fa-youtube text-red-600 text-xl"></i>
+                                <h3 class="font-title text-base text-slate-900">당시 경기 하이라이트 분석관</h3>
+                            </div>
+                            <!-- Switch buttons for Embed/Canvas Tactical Simulator -->
+                            <div class="flex gap-1.5 bg-slate-100 p-1 rounded-xl text-[10px] font-bold">
+                                <button id="btnVideoMode" onclick="switchVideoView('video')" class="bg-white text-slate-800 px-3 py-1 rounded-lg shadow-sm">실제 하이라이트</button>
+                                <button id="btnCanvasMode" onclick="switchVideoView('canvas')" class="text-slate-500 hover:text-slate-800 px-3 py-1 rounded-lg">전술 시뮬레이션</button>
+                            </div>
+                        </div>
+
+                        <!-- Video Player Slot -->
+                        <div id="videoContainer" class="relative w-full aspect-video rounded-xl overflow-hidden bg-black border border-slate-100">
+                            <iframe id="highlightVideoIframe" class="w-full h-full absolute inset-0" src="https://www.youtube-nocookie.com/embed/Zzu5_Hgy-0c?rel=0" title="KBO Highlights" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+                        </div>
+
+                        <!-- Tactical Canvas Simulation Slot -->
+                        <div id="canvasContainer" class="hidden relative w-full aspect-video rounded-xl overflow-hidden bg-slate-950 border border-slate-900">
+                            <canvas id="tacticalPlayCanvas" class="w-full h-full block"></canvas>
+                            <div class="absolute bottom-3 left-3 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-lg text-[10px] text-emerald-400 font-mono">
+                                <span class="w-2 h-2 rounded-full bg-emerald-500 inline-block animate-ping mr-1"></span> Live Tactical Pitch Tracker
+                            </div>
+                            <div class="absolute top-3 right-3 flex gap-1">
+                                <button onclick="triggerPitchSimulation('fastball')" class="bg-brandBlue/90 hover:opacity-95 text-white text-[10px] font-extrabold px-3 py-1.5 rounded-lg theme-bg-transition" id="btnPitchFast">직구 투구</button>
+                                <button onclick="triggerPitchSimulation('slider')" class="bg-brandOrange/90 hover:opacity-95 text-white text-[10px] font-extrabold px-3 py-1.5 rounded-lg theme-bg-transition" id="btnPitchSlide">슬라이더</button>
+                            </div>
+                        </div>
+
+                        <div class="mt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-slate-500">
+                            <span><i class="fa-solid fa-triangle-exclamation text-brandOrange theme-bg-transition" id="tacticalWarningIcon"></i> 보안 정책에 의해 프레임 차단 발생 시 '전술 시뮬레이션'이나 아래 공식 사이트를 이용해 주세요.</span>
+                            <a href="https://m.sports.naver.com/kbaseball" target="_blank" class="bg-brandOrange text-white font-extrabold px-4 py-2 rounded-xl text-center hover:opacity-90 self-end theme-bg-transition" id="btnLiveBroadcasting">네이버 야구 생중계관 ➔</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: KBO Live Community Feeds (5 Columns) -->
+                <div class="lg:col-span-5 bg-white border border-slate-200 rounded-3xl p-5 shadow-sm flex flex-col justify-between h-[520px]">
+                    <div>
+                        <div class="flex justify-between items-center mb-3 pb-3 border-b border-slate-100">
+                            <div>
+                                <h3 class="font-title text-base text-slate-900">야구 커뮤니티 실시간 광풍</h3>
+                                <p class="text-[11px] text-slate-400">네이버 스포츠 & MLBPARK 실시간 베스트 리액션</p>
+                            </div>
+                            <span class="bg-brandOrange/10 text-brandOrange text-[10px] font-black px-2.5 py-1 rounded-full uppercase theme-bg-transition" id="communityLiveBadge">LIVE</span>
+                        </div>
+
+                        <!-- Weekly Best Meme Box -->
+                        <div class="bg-orange-50/50 p-3.5 border border-orange-100 rounded-2xl mb-4 flex items-center gap-3">
+                            <div class="w-10 h-10 bg-brandOrange/10 rounded-full flex items-center justify-center text-brandOrange text-lg shrink-0 theme-bg-transition" id="weeklyMemeIconBox">
+                                <i class="fa-solid fa-fire-flame-curved"></i>
+                            </div>
+                            <div class="text-[11px]">
+                                <span class="font-extrabold text-slate-700 block mb-0.5">🔥 금주의 실시간 베스트 베이스볼 유머</span>
+                                <p id="weeklyBestMeme" class="text-slate-600 font-medium">"구자욱 홈런 칠 때 지하철 대구행 열차 전원 움찔함 진짜 ㅋㅋㅋ"</p>
+                            </div>
+                        </div>
+
+                        <!-- Feed Container -->
+                        <div id="commentsStreamContainer" class="space-y-2.5 overflow-y-auto max-h-[220px] pr-2">
+                            <!-- Injected dynamically -->
+                        </div>
+                    </div>
+
+                    <!-- Input Section -->
+                    <div class="pt-3 border-t border-slate-100">
+                        <span class="text-xs font-bold text-slate-600 block mb-2"><i class="fa-solid fa-pen mr-1 text-brandBlue theme-bg-transition" id="inputPenIcon"></i> 퇴근길 익명 전술 토론실</span>
+                        <form onsubmit="handleCommentSubmit(event)" class="flex gap-1.5">
+                            <input id="inputNick" type="text" placeholder="닉네임" value="퇴근길삼팬" class="w-20 px-3 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:border-brandBlue text-slate-600 font-semibold" required>
+                            <input id="inputContent" type="text" placeholder="가벼운 한 줄 응원을 남겨보세요!" class="flex-grow px-3 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:border-brandBlue text-slate-600" required>
+                            <button type="submit" class="bg-brandBlue hover:opacity-90 text-white font-extrabold px-4 py-2 rounded-xl text-xs shrink-0 transition-all theme-bg-transition" id="btnSubmitComment">등록</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== 4. SCHEDULE VIRTUAL PAGE ==================== -->
+        <section id="view-schedule" class="page-view px-4 max-w-7xl mx-auto">
+            <div class="text-center mb-8">
+                <span class="bg-brandBlue/10 text-brandBlue text-xs font-bold px-4 py-1.5 rounded-full uppercase tracking-wider mb-2 inline-block theme-bg-transition" id="scheduleHeaderBadge">2026 KBO 공식 일정</span>
+                <h2 class="font-title text-3xl text-slate-900">정규시즌 금주 경기 일정</h2>
+                <p class="text-sm text-slate-500 max-w-xl mx-auto mt-1">
+                    KBO 공식 일정을 기반으로 한 7월 13일부터 7월 19일 주간 대진표입니다.<br>
+                    올스타 브레이크 이후 후반기 첫 경기인 7월 16일(목) 일정부터 등록되어 있습니다.
+                </p>
+            </div>
+
+            <!-- Schedule Filter Options -->
+            <div class="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4 pb-3 border-b border-slate-100">
+                    <h3 class="font-title text-sm text-slate-800"><i class="fa-regular fa-calendar-check text-brandBlue mr-1.5 theme-bg-transition" id="scheduleCalIcon"></i> 후반기 오프닝 3연전 매치 리스트</h3>
+                    <div class="flex gap-1">
+                        <button onclick="filterScheduleDay('all')" class="schedule-day-btn bg-brandBlue text-white text-[10px] font-bold px-3 py-1.5 rounded-lg shadow-sm theme-bg-transition" id="btnFilterScheduleAll" data-day="all">전체</button>
+                        <button onclick="filterScheduleDay('break')" class="schedule-day-btn bg-slate-100 text-slate-600 text-[10px] font-bold px-3 py-1.5 rounded-lg" data-day="break">올스타 브레이크</button>
+                        <button onclick="filterScheduleDay('game')" class="schedule-day-btn bg-slate-100 text-slate-600 text-[10px] font-bold px-3 py-1.5 rounded-lg" data-day="game">경기일</button>
+                    </div>
+                </div>
+                
+                <div class="space-y-3" id="scheduleListContainer">
+                    <!-- Dynamic Matches loaded here -->
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== 5. 야구 초보 탈출 패스 VIRTUAL PAGE ==================== -->
+        <section id="view-beginner" class="page-view px-4 max-w-5xl mx-auto">
+            <div class="text-center mb-6">
+                <span class="bg-brandBlue/10 text-brandBlue text-xs font-bold px-4 py-1.5 rounded-full uppercase tracking-wider mb-2 inline-block theme-bg-transition" id="beginnerHeaderBadge">야구 초보 탈출 패스</span>
+                <h2 class="font-title text-3xl text-slate-900">야알못에서 30초 만에 탈출하는 기적의 마스터스</h2>
+                <p class="text-sm text-slate-500 max-w-xl mx-auto mt-2">야구장 직관과 퇴근길 중계가 즐거워지는 기적! 가장 기본적이고 핵심적인 핵심 규칙과 용어 사전입니다.</p>
+            </div>
+
+            <!-- Tabs Nav -->
+            <div class="flex justify-center gap-2 mb-6 bg-slate-200/50 p-1 rounded-2xl max-w-md mx-auto">
+                <button onclick="switchBeginnerTab('rule')" id="tabBtn-rule" class="flex-grow py-2.5 text-xs font-bold rounded-xl bg-white text-slate-800 shadow-sm transition-all">30초 기초 야구 룰 ⚾</button>
+                <button onclick="switchBeginnerTab('word')" id="tabBtn-word" class="flex-grow py-2.5 text-xs font-bold rounded-xl text-slate-600 hover:text-slate-800 transition-all">12대 핵심 용어 사전 📖</button>
+            </div>
+
+            <!-- Tab Contents -->
+            <div class="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm min-h-[400px]">
+                
+                <!-- Tab 1: 진짜 진짜 기초적인 룰 정리 반영 -->
+                <div id="beginnerTab-rule" class="beginner-tab-view space-y-6">
+                    <div class="text-left mb-4 border-b border-slate-100 pb-3">
+                        <h3 class="font-title text-xl text-brandBlue flex items-center gap-2 theme-bg-transition" id="beginnerRuleTitle">
+                            <i class="fa-solid fa-graduation-cap"></i> 세상에서 가장 쉬운 야구 기초 규칙 설명서
+                        </h3>
+                        <p class="text-xs text-slate-400 mt-1">복잡한 세부 규정은 잊으세요! 이것만 알아도 중계를 200% 이해하고 직관에서 함께 환호할 수 있습니다.</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <!-- Rule 1: Basic Game Concept -->
+                        <div class="bg-slate-50 p-5 rounded-2xl border border-slate-100 flex gap-4 items-start hover:shadow-md transition-all">
+                            <div class="w-12 h-12 rounded-xl bg-brandBlue/10 text-brandBlue flex items-center justify-center text-xl shrink-0 theme-bg-transition" id="ruleIcon1">
+                                <i class="fa-solid fa-users"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-sm text-slate-800">1. 경기 인원과 팀의 대결 구도</h4>
+                                <p class="text-xs text-slate-500 mt-1.5 leading-relaxed">
+                                    야구는 한 팀당 <strong>9명</strong>의 선수가 출전하여 서로 공격과 수비를 번갈아 가며 진행합니다. 
+                                    공격하는 팀은 배트를 들고 공을 치는 <strong>타자</strong>가 되고, 수비하는 팀은 공을 던지는 <strong>투수</strong>와 필드에 넓게 퍼진 야수들로 구성됩니다.
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Rule 2: Strike, Ball and Out -->
+                        <div class="bg-slate-50 p-5 rounded-2xl border border-slate-100 flex gap-4 items-start hover:shadow-md transition-all">
+                            <div class="w-12 h-12 rounded-xl bg-brandOrange/10 text-brandOrange flex items-center justify-center text-xl shrink-0 theme-bg-transition" id="ruleIcon2">
+                                <i class="fa-solid fa-circle-check"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-sm text-slate-800">2. 스트라이크와 볼, 그리고 아웃</h4>
+                                <p class="text-xs text-slate-500 mt-1.5 leading-relaxed">
+                                    투수가 약속된 존 안에 정확히 공을 던지거나 타자가 헛스윙을 하면 <strong>스트라이크(3개 쌓이면 삼진 아웃)</strong>가 됩니다. 
+                                    존을 벗어난 공은 <strong>볼(4개 쌓이면 볼넷으로 공짜 진루)</strong>이 됩니다. 타자가 친 공이 땅에 닿기 전에 야수가 바로 잡아도 아웃됩니다.
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Rule 3: Inning structure -->
+                        <div class="bg-slate-50 p-5 rounded-2xl border border-slate-100 flex gap-4 items-start hover:shadow-md transition-all">
+                            <div class="w-12 h-12 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center text-xl shrink-0">
+                                <i class="fa-solid fa-arrows-spin"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-sm text-slate-800">3. 이닝(회)과 공수교대의 원리</h4>
+                                <p class="text-xs text-slate-500 mt-1.5 leading-relaxed">
+                                    한 경기는 총 <strong>9이닝(회)</strong> 동안 전개됩니다. 수비하는 팀이 공격 팀 타자들을 <strong>3명 아웃(3아웃)</strong>시키면 서로 역할을 맞교대하게 됩니다. 
+                                    각 이닝은 초(원정팀 공격)와 말(홈팀 공격)로 공평하게 나누어 진행됩니다.
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Rule 4: Scoring System -->
+                        <div class="bg-slate-50 p-5 rounded-2xl border border-slate-100 flex gap-4 items-start hover:shadow-md transition-all">
+                            <div class="w-12 h-12 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center text-xl shrink-0">
+                                <i class="fa-solid fa-map-pin"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-sm text-slate-800">4. 점수를 얻는 법 (득점의 조건)</h4>
+                                <p class="text-xs text-slate-500 mt-1.5 leading-relaxed">
+                                    타자가 투수의 공을 쳐서 안타를 만들고 나가거나 볼넷으로 출루한 후, 야구장 바닥에 다이아몬드 모양으로 놓여진 <strong>1루, 2루, 3루 베이스를 차례로 밟고 마지막 홈 베이스</strong>로 돌아오는 데 성공하면 소중한 <strong>1점</strong>을 획득합니다.
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Rule 5: Home Run -->
+                        <div class="bg-slate-50 p-5 rounded-2xl border border-slate-100 flex gap-4 items-start hover:shadow-md transition-all">
+                            <div class="w-12 h-12 rounded-xl bg-red-100 text-red-800 flex items-center justify-center text-xl shrink-0">
+                                <i class="fa-solid fa-fire"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-sm text-slate-800">5. 야구의 꽃, 홈런(Home Run)</h4>
+                                <p class="text-xs text-slate-500 mt-1.5 leading-relaxed">
+                                    타자가 친 타구가 수비수들이 도달할 수 없는 <strong>야구장 외야 담장 밖</strong>으로 날아가 넘어가면 홈런이 됩니다! 
+                                    이때 타자와 현재 누상(베이스)에 나가 있던 동료 주자들은 아무런 방해 없이 걸어서 홈으로 들어와 대량 득점을 장식합니다.
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Rule 6: 2026 KBO Modern Tech -->
+                        <div class="bg-slate-50 p-5 rounded-2xl border border-slate-100 flex gap-4 items-start hover:shadow-md transition-all">
+                            <div class="w-12 h-12 rounded-xl bg-indigo-100 text-indigo-800 flex items-center justify-center text-xl shrink-0">
+                                <i class="fa-solid fa-microchip"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-sm text-slate-800">6. 알아두면 유용한 2026 현대 야구 상식</h4>
+                                <p class="text-xs text-slate-500 mt-1.5 leading-relaxed">
+                                    최근 KBO는 더 빠르고 공정한 야구를 위해 <strong>로봇 심판 시스템(ABS)</strong>을 전격 도입하여 완벽하고 공정하게 볼 판정을 진행합니다. 
+                                    또한 투수가 공을 던지기까지 제한시간을 설정해 두는 <strong>피치클록</strong> 제도를 활용해 불필요한 대기시간을 과감히 제거했습니다.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Simple game structure info -->
+                    <div class="bg-brandBlue/5 p-4 rounded-2xl border border-brandBlue/10 text-xs text-slate-600 mt-6 flex flex-col sm:flex-row items-center gap-4 theme-bg-transition" id="beginnerRuleFooter">
+                        <div class="font-black text-brandBlue uppercase text-center sm:text-left shrink-0 theme-bg-transition" id="beginnerRuleFooterText">쉽게 외우는 3단 요약</div>
+                        <div class="leading-relaxed">
+                            "<strong>투수</strong>가 던지고, <strong>타자</strong>가 받아쳐서, 아웃 세 개(<strong>3아웃</strong>)가 되기 전까지 한 바퀴 돌아서 홈으로 골인하면 득점!" 이 공식만 기억하셔도 야구 직관의 흐름이 단숨에 선명하게 읽힙니다.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab 2: 용어 사전 플래시 카드 & 실시간 검색 기능 -->
+                <div id="beginnerTab-word" class="beginner-tab-view hidden space-y-6">
+                    <div class="flex flex-col sm:flex-row gap-3 items-center justify-between pb-3 border-b border-slate-100">
+                        <div class="text-left">
+                            <h3 class="font-title text-base text-slate-800">KBO 12대 야구 필수 용어 카드 사전</h3>
+                            <span class="text-xs text-slate-400">검색창에 단어를 입력하면 해당하는 카드를 즉석에서 가려냅니다.</span>
+                        </div>
+                        <!-- Search Bar Component -->
+                        <div class="relative w-full sm:w-72 shrink-0">
+                            <span class="absolute inset-y-0 left-3 flex items-center text-slate-400">
+                                <i class="fa-solid fa-magnifying-glass"></i>
+                            </span>
+                            <input type="text" id="glossarySearchInput" onkeyup="filterGlossaryCards()" placeholder="궁금한 용어를 검색해보세요... (예: 타율)" class="w-full pl-9 pr-3 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:border-brandBlue focus:ring-1 focus:ring-brandBlue">
+                        </div>
+                    </div>
+
+                    <!-- 12 Cards Grid -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" id="glossaryCardsGrid">
+                        <!-- Card 1 -->
+                        <div class="perspective h-40 cursor-pointer glossary-card" onclick="flipCard(this)" data-title="타율 ba">
+                            <div class="preserve-3d w-full h-full relative border border-slate-200 rounded-2xl shadow-sm bg-slate-50">
+                                <div class="backface-hidden absolute inset-0 p-5 flex flex-col justify-between">
+                                    <span class="text-brandBlue font-extrabold text-[10px] theme-bg-transition" id="cardLabelBlue1">클래식 지표</span>
+                                    <h4 class="font-title text-base text-slate-800">타율 (BA)</h4>
+                                    <span class="text-[10px] text-slate-400">터치하여 해설 읽기 ➔</span>
+                                </div>
+                                <div class="backface-hidden rotate-y-180 absolute inset-0 bg-brandBlue text-white p-5 rounded-2xl flex flex-col justify-center theme-bg-transition" id="cardBackBlue1">
+                                    <h4 class="font-bold text-xs mb-1">타율 (Batting Average)</h4>
+                                    <p class="text-[10px] leading-relaxed opacity-90">타자가 10번 타석에 섰을 때 안타를 칠 확률입니다. .300(3할) 이상이면 1군 에이스 사원 취급을 받습니다.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Card 2 -->
+                        <div class="perspective h-40 cursor-pointer glossary-card" onclick="flipCard(this)" data-title="평균자책점 era">
+                            <div class="preserve-3d w-full h-full relative border border-slate-200 rounded-2xl shadow-sm bg-slate-50">
+                                <div class="backface-hidden absolute inset-0 p-5 flex flex-col justify-between">
+                                    <span class="text-brandBlue font-extrabold text-[10px] theme-bg-transition" id="cardLabelBlue2">클래식 지표</span>
+                                    <h4 class="font-title text-base text-slate-800">평균자책점 (ERA)</h4>
+                                    <span class="text-[10px] text-slate-400">터치하여 해설 읽기 ➔</span>
+                                </div>
+                                <div class="backface-hidden rotate-y-180 absolute inset-0 bg-brandBlue text-white p-5 rounded-2xl flex flex-col justify-center theme-bg-transition" id="cardBackBlue2">
+                                    <h4 class="font-bold text-xs mb-1">평균자책점 (Earned Run Average)</h4>
+                                    <p class="text-[10px] leading-relaxed opacity-90">투수가 9이닝 한 경기를 홀로 끝까지 던진다고 가정했을 때 내주는 점수. 3점대 이하면 명품 선발급입니다.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Card 3 -->
+                        <div class="perspective h-40 cursor-pointer glossary-card" onclick="flipCard(this)" data-title="승리기여도 war">
+                            <div class="preserve-3d w-full h-full relative border border-slate-200 rounded-2xl shadow-sm bg-slate-50">
+                                <div class="backface-hidden absolute inset-0 p-5 flex flex-col justify-between">
+                                    <span class="text-brandOrange font-extrabold text-[10px] theme-bg-transition" id="cardLabelOrange1">하이테크 수치</span>
+                                    <h4 class="font-title text-base text-slate-800">승리기여도 (WAR)</h4>
+                                    <span class="text-[10px] text-slate-400">터치하여 해설 읽기 ➔</span>
+                                </div>
+                                <div class="backface-hidden rotate-y-180 absolute inset-0 bg-brandOrange text-white p-5 rounded-2xl flex flex-col justify-center theme-bg-transition" id="cardBackOrange1">
+                                    <h4 class="font-bold text-xs mb-1">승리기여도 (Wins Above Replacement)</h4>
+                                    <p class="text-[10px] leading-relaxed opacity-90">대체 선수 대비 이 선수가 활약해 팀에 몇 번의 승리를 추가 배달해 줬는가 측정하는 만능 성적표입니다.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Card 4 -->
+                        <div class="perspective h-40 cursor-pointer glossary-card" onclick="flipCard(this)" data-title="퀄리티 스타트 qs">
+                            <div class="preserve-3d w-full h-full relative border border-slate-200 rounded-2xl shadow-sm bg-slate-50">
+                                <div class="backface-hidden absolute inset-0 p-5 flex flex-col justify-between">
+                                    <span class="text-brandOrange font-extrabold text-[10px] theme-bg-transition" id="cardLabelOrange2">하이테크 수치</span>
+                                    <h4 class="font-title text-base text-slate-800">퀄리티 스타트 (QS)</h4>
+                                    <span class="text-[10px] text-slate-400">터치하여 해설 읽기 ➔</span>
+                                </div>
+                                <div class="backface-hidden rotate-y-180 absolute inset-0 bg-brandOrange text-white p-5 rounded-2xl flex flex-col justify-center theme-bg-transition" id="cardBackOrange2">
+                                    <h4 class="font-bold text-xs mb-1">퀄리티 스타트 (Quality Start)</h4>
+                                    <p class="text-[10px] leading-relaxed opacity-90">선발투수가 6이닝 이상을 던져 3자책점 이하로 완수해 제 역할을 다한 훌륭한 게임을 일컫습니다.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Card 5 -->
+                        <div class="perspective h-40 cursor-pointer glossary-card" onclick="flipCard(this)" data-title="블론 세이브 bs">
+                            <div class="preserve-3d w-full h-full relative border border-slate-200 rounded-2xl shadow-sm bg-slate-50">
+                                <div class="backface-hidden absolute inset-0 p-5 flex flex-col justify-between">
+                                    <span class="text-red-500 font-extrabold text-[10px]">팬덤 은어</span>
+                                    <h4 class="font-title text-base text-slate-800">블론 세이브 (BS)</h4>
+                                    <span class="text-[10px] text-slate-400">터치하여 해설 읽기 ➔</span>
+                                </div>
+                                <div class="backface-hidden rotate-y-180 absolute inset-0 bg-red-600 text-white p-5 rounded-2xl flex flex-col justify-center">
+                                    <h4 class="font-bold text-xs mb-1">블론 세이브 (Blown Save)</h4>
+                                    <p class="text-[10px] leading-relaxed opacity-90">승리가 눈앞인데 막판 마무리 투수가 동점이나 역전을 허용하여 판을 망쳐버렸을 때 외치는 절망적 용어입니다.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Card 6 -->
+                        <div class="perspective h-40 cursor-pointer glossary-card" onclick="flipCard(this)" data-title="퀵후크">
+                            <div class="preserve-3d w-full h-full relative border border-slate-200 rounded-2xl shadow-sm bg-slate-50">
+                                <div class="backface-hidden absolute inset-0 p-5 flex flex-col justify-between">
+                                    <span class="text-red-500 font-extrabold text-[10px]">팬덤 은어</span>
+                                    <h4 class="font-title text-base text-slate-800">퀵후크 (Quick Hook)</h4>
+                                    <span class="text-[10px] text-slate-400">터치하여 해설 읽기 ➔</span>
+                                </div>
+                                <div class="backface-hidden rotate-y-180 absolute inset-0 bg-red-600 text-white p-5 rounded-2xl flex flex-col justify-center">
+                                    <h4 class="font-bold text-xs mb-1">퀵후크 (Quick Hook)</h4>
+                                    <p class="text-[10px] leading-relaxed opacity-90">선발 투수가 5회 이전에 조금만 휘청여도 가차없이 마운드에서 내리는 감독의 비정한 칼 교체 전술입니다.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Card 7: OPS -->
+                        <div class="perspective h-40 cursor-pointer glossary-card" onclick="flipCard(this)" data-title="ops 출루율 장타율">
+                            <div class="preserve-3d w-full h-full relative border border-slate-200 rounded-2xl shadow-sm bg-slate-50">
+                                <div class="backface-hidden absolute inset-0 p-5 flex flex-col justify-between">
+                                    <span class="text-brandBlue font-extrabold text-[10px] theme-bg-transition" id="cardLabelBlue3">스마트 지표</span>
+                                    <h4 class="font-title text-base text-slate-800">출루율+장타율 (OPS)</h4>
+                                    <span class="text-[10px] text-slate-400">터치하여 해설 읽기 ➔</span>
+                                </div>
+                                <div class="backface-hidden rotate-y-180 absolute inset-0 bg-brandBlue text-white p-5 rounded-2xl flex flex-col justify-center theme-bg-transition" id="cardBackBlue3">
+                                    <h4 class="font-bold text-xs mb-1">OPS (On-base plus Slugging)</h4>
+                                    <p class="text-[10px] leading-relaxed opacity-90">출루율과 장타율의 합계 지표. 타자의 생산력을 간편하게 입증하며, .900 이상이면 초특급 강타자로 칭송받습니다.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Card 8: 사사구 -->
+                        <div class="perspective h-40 cursor-pointer glossary-card" onclick="flipCard(this)" data-title="사사구 볼넷 사구 데드볼">
+                            <div class="preserve-3d w-full h-full relative border border-slate-200 rounded-2xl shadow-sm bg-slate-50">
+                                <div class="backface-hidden absolute inset-0 p-5 flex flex-col justify-between">
+                                    <span class="text-brandBlue font-extrabold text-[10px] theme-bg-transition" id="cardLabelBlue4">경기 용어</span>
+                                    <h4 class="font-title text-base text-slate-800">사사구</h4>
+                                    <span class="text-[10px] text-slate-400">터치하여 해설 읽기 ➔</span>
+                                </div>
+                                <div class="backface-hidden rotate-y-180 absolute inset-0 bg-brandBlue text-white p-5 rounded-2xl flex flex-col justify-center theme-bg-transition" id="cardBackBlue4">
+                                    <h4 class="font-bold text-xs mb-1">사사구 (Four Balls & Hit by Pitch)</h4>
+                                    <p class="text-[10px] leading-relaxed opacity-90">볼넷(4볼)과 몸에 맞는 공(사구)을 아울러 부르는 용어. 투수의 제구 흔들림이나 타자의 출루 집념을 볼 수 있는 척도입니다.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Card 9: 득점권 타율 -->
+                        <div class="perspective h-40 cursor-pointer glossary-card" onclick="flipCard(this)" data-title="득점권 타율 risp 찬스">
+                            <div class="preserve-3d w-full h-full relative border border-slate-200 rounded-2xl shadow-sm bg-slate-50">
+                                <div class="backface-hidden absolute inset-0 p-5 flex flex-col justify-between">
+                                    <span class="text-brandOrange font-extrabold text-[10px] theme-bg-transition" id="cardLabelOrange3">클러치 기량</span>
+                                    <h4 class="font-title text-base text-slate-800">득점권 타율 (RISP)</h4>
+                                    <span class="text-[10px] text-slate-400">터치하여 해설 읽기 ➔</span>
+                                </div>
+                                <div class="backface-hidden rotate-y-180 absolute inset-0 bg-brandOrange text-white p-5 rounded-2xl flex flex-col justify-center theme-bg-transition" id="cardBackOrange3">
+                                    <h4 class="font-bold text-xs mb-1">득점권 타율 (Runner In Scoring Position)</h4>
+                                    <p class="text-[10px] leading-relaxed opacity-90">주자가 2루나 3루에 나가있어 한 방이면 득점이 되는 찬스에서의 타율. 타자의 해결사 본능(클러치 능력)을 판단하는 중요 기준입니다.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Card 10: 사이클링 히트 -->
+                        <div class="perspective h-40 cursor-pointer glossary-card" onclick="flipCard(this)" data-title="사이클링 히트 cycling hit 대기록">
+                            <div class="preserve-3d w-full h-full relative border border-slate-200 rounded-2xl shadow-sm bg-slate-50">
+                                <div class="backface-hidden absolute inset-0 p-5 flex flex-col justify-between">
+                                    <span class="text-brandOrange font-extrabold text-[10px] theme-bg-transition" id="cardLabelOrange4">대기록</span>
+                                    <h4 class="font-title text-base text-slate-800">사이클링 히트</h4>
+                                    <span class="text-[10px] text-slate-400">터치하여 해설 읽기 ➔</span>
+                                </div>
+                                <div class="backface-hidden rotate-y-180 absolute inset-0 bg-brandOrange text-white p-5 rounded-2xl flex flex-col justify-center theme-bg-transition" id="cardBackOrange4">
+                                    <h4 class="font-bold text-xs mb-1">사이클링 히트 (Hit for the Cycle)</h4>
+                                    <p class="text-[10px] leading-relaxed opacity-90">한 타자가 한 경기 내에서 단타, 2루타, 3루타, 홈런을 순서에 상관없이 모조리 쳐내는 진기하고 대단한 개인 기록입니다.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Card 11 -->
+                        <div class="perspective h-40 cursor-pointer glossary-card" onclick="flipCard(this)" data-title="벤치 클리어링 충돌">
+                            <div class="preserve-3d w-full h-full relative border border-slate-200 rounded-2xl shadow-sm bg-slate-50">
+                                <div class="backface-hidden absolute inset-0 p-5 flex flex-col justify-between">
+                                    <span class="text-red-500 font-extrabold text-[10px]">경기 연출</span>
+                                    <h4 class="font-title text-base text-slate-800">벤치 클리어링</h4>
+                                    <span class="text-[10px] text-slate-400">터치하여 해설 읽기 ➔</span>
+                                </div>
+                                <div class="backface-hidden rotate-y-180 absolute inset-0 bg-red-600 text-white p-5 rounded-2xl flex flex-col justify-center">
+                                    <h4 class="font-bold text-xs mb-1">벤치 클리어링 (Bench Clearing)</h4>
+                                    <p class="text-[10px] leading-relaxed opacity-90">경기 도중 선수단 간의 충돌이나 예민한 상황 발생 시 대기 구역(더그아웃/불펜)에 있던 선수 전원이 마운드로 달려 나와 세력 대치하는 스포츠 연출입니다.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Card 12 -->
+                        <div class="perspective h-40 cursor-pointer glossary-card" onclick="flipCard(this)" data-title="피칭 터널 구질 일관성">
+                            <div class="preserve-3d w-full h-full relative border border-slate-200 rounded-2xl shadow-sm bg-slate-50">
+                                <div class="backface-hidden absolute inset-0 p-5 flex flex-col justify-between">
+                                    <span class="text-red-500 font-extrabold text-[10px]">현대 야구론</span>
+                                    <h4 class="font-title text-base text-slate-800">피칭 터널</h4>
+                                    <span class="text-[10px] text-slate-400">터치하여 해설 읽기 ➔</span>
+                                </div>
+                                <div class="backface-hidden rotate-y-180 absolute inset-0 bg-red-600 text-white p-5 rounded-2xl flex flex-col justify-center">
+                                    <h4 class="font-bold text-xs mb-1">피칭 터널 (Pitch Tunneling)</h4>
+                                    <p class="text-[10px] leading-relaxed opacity-90">투수가 던진 다른 종류의 공(직구와 슬라이더 등)들이 홈플레이트 7~8m 앞까지는 거의 동일한 일관된 궤적으로 들어오다가 마지막에 급격히 갈라지게 하여 타자를 속이는 현대 투구 핵심 이론입니다.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ==================== 6. QUIZ VIRTUAL PAGE ==================== -->
+        <section id="view-quiz" class="page-view px-4 max-w-2xl mx-auto">
+            <div class="text-center mb-8">
+                <span class="bg-brandOrange/10 text-brandOrange text-xs font-bold px-4 py-1.5 rounded-full uppercase tracking-wider mb-2 inline-block theme-bg-transition" id="quizHeaderBadge">KBO FAN QUIZ</span>
+                <h2 class="font-title text-3xl text-slate-900">나의 야구팬 응원 성향 분석기 (DNA 테스트)</h2>
+                <p class="text-sm text-slate-500 mt-1">10가지 정밀 성향 질문에 답하고, 나만의 맞춤형 디지털 슬로건 KBO 뱃지를 획득해 보세요! (테스트 결과 자동 저장)</p>
+            </div>
+
+            <!-- Main Quiz Container -->
+            <div class="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm" id="quizBox">
+                <!-- Inside will be rendered via JS -->
+            </div>
+        </section>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="bg-white border-t border-slate-200 py-10 px-4 text-center text-slate-500 text-xs">
+        <div class="max-w-7xl mx-auto flex flex-col items-center gap-5">
+            <div class="flex items-center gap-2">
+                <span class="text-xl text-brandOrange theme-bg-transition" id="footerIcon"><i class="fa-solid fa-baseball"></i></span>
+                <span class="font-title text-slate-800">KBO 2026 승률 저장소</span>
+            </div>
+            <p class="max-w-md leading-relaxed">
+                본 웹페이지는 2026 KBO 한국 프로야구 정규 리그에 맞춰 야구팬들의 자유로운 응원과 쉬운 흐름 요약을 지원하기 위한 가상 시각화 놀이터입니다.
+            </p>
+            <div class="flex gap-4 text-slate-400">
+                <a href="#home" class="hover:text-brandBlue transition-colors">홈</a>
+                <a href="#teams" class="hover:text-brandBlue transition-colors">구단 소개</a>
+                <a href="#rollercoaster" class="hover:text-brandBlue transition-colors">승률 분석 차트</a>
+                <a href="#schedule" class="hover:text-brandBlue transition-colors">경기 일정</a>
+            </div>
+            <p class="text-[10px] text-slate-300">&copy; 2026 KBO Win-Rate Storage. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- Floating Global Custom Toast Notification Center -->
+    <div id="toastNotification" class="fixed bottom-6 right-6 z-[100] transform translate-y-20 opacity-0 transition-all duration-300 bg-slate-900 text-white text-xs font-bold px-5 py-3.5 rounded-xl flex items-center gap-2 shadow-2xl pointer-events-none">
+        <span class="text-brandOrange theme-bg-transition" id="toastIcon"><i class="fa-solid fa-bell"></i></span>
+        <span id="toastMsg">연동 완료되었습니다.</span>
+    </div>
+
+    <!-- CORE SCRIPTS -->
+    <script>
+        // Web Audio API Context
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        function playStadiumChant() {
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            const notes = [261.63, 329.63, 392.00, 523.25]; // C4, E4, G4, C5 major chord
+            notes.forEach((freq, idx) => {
+                const osc = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+                
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime + (idx * 0.12));
+                
+                gainNode.gain.setValueAtTime(0.12, audioCtx.currentTime + (idx * 0.12));
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + (idx * 0.12) + 0.28);
+                
+                osc.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+                
+                osc.start(audioCtx.currentTime + (idx * 0.12));
+                osc.stop(audioCtx.currentTime + (idx * 0.12) + 0.32);
+            });
+            showToast("📣 야구장 응원 함성 사운드가 동적으로 재생되었습니다!");
+        }
+
+        // Master 10 KBO Teams Complete Data with precise official HEX Colors
+        const KBO_TEAMS_DATA = [
+            {
+                id: 'kia',
+                name: 'KIA 타이거즈',
+                origin: '광주',
+                desc: '김도영의 기록 파괴 활약과 함께 뜨거운 화력을 내세우는 KBO 최고 역사의 명문 구단.',
+                lastChampionship: '2024년',
+                totalChampionships: '12회',
+                color: '#EA0029',
+                subColor: '#000000',
+                logoSvg: `<svg viewBox="0 0 100 100" class="w-10 h-10"><circle cx="50" cy="50" r="45" fill="#EA0029"/><text x="50" y="58" font-family="Montserrat" font-weight="900" font-size="28" fill="#FFF" text-anchor="middle">KIA</text></svg>`,
+                mvps: [
+                    { name: '김도영', pos: '내야수', highlight: '홈런-도루 페이스를 연일 갈아치우는 불방망이의 주역', type: 'batter', stats: { main: '.354 BA', sub1: '27 HR', sub2: '78 RBI' } },
+                    { name: '양현종', pos: '투수 (선발)', highlight: '타이거즈 역사를 책임지는 리빙 레전드, 대투수', type: 'pitcher', stats: { main: '10 W', sub1: '3.12 ERA', sub2: '110 K' } },
+                    { name: '최형우', pos: '지명타자', highlight: '나이를 무색케 하는 클러치 능력과 폭발적인 결정력', type: 'batter', stats: { main: '.295 BA', sub1: '15 HR', sub2: '62 RBI' } }
+                ]
+            },
+            {
+                id: 'samsung',
+                name: '삼성 라이온즈',
+                origin: '대구',
+                desc: '완성형 불펜진과 원태인-구자욱 투타 시너지를 바탕으로 2026 시즌 최고의 승률을 유지하고 있습니다.',
+                lastChampionship: '2014년',
+                totalChampionships: '8회',
+                color: '#074CA1',
+                subColor: '#FFFFFF',
+                logoSvg: `<svg viewBox="0 0 100 100" class="w-10 h-10"><circle cx="50" cy="50" r="45" fill="#074CA1"/><text x="50" y="58" font-family="Montserrat" font-weight="900" font-size="28" fill="#FFF" text-anchor="middle">SL</text><path d="M20,20 L80,80" stroke="#FFF" stroke-width="4" opacity="0.15"/></svg>`,
+                mvps: [
+                    { name: '구자욱', pos: '외야수', highlight: '사자군단의 불뿜는 캡틴, 대활약 외야 기둥', type: 'batter', stats: { main: '.325 BA', sub1: '18 HR', sub2: '72 RBI' } },
+                    { name: '원태인', pos: '투수 (선발)', highlight: '푸른 피 수호 에이스, 명품 서클체인지업', type: 'pitcher', stats: { main: '11 W', sub1: '2.95 ERA', sub2: '95 K' } },
+                    { name: '오승환', pos: '투수 (마무리)', highlight: '한계를 모르는 돌직구, 전설의 클로저', type: 'pitcher', stats: { main: '22 SV', sub1: '1.82 ERA', sub2: '38 K' } }
+                ]
+            },
+            {
+                id: 'lg',
+                name: 'LG 트윈스',
+                origin: '서울',
+                desc: '끈끈한 신바람 주루와 짜임새 넘치는 타선을 바탕으로 정상을 바짝 추격하는 트윈스 팀.',
+                lastChampionship: '2023년',
+                totalChampionships: '3회',
+                color: '#C30452',
+                subColor: '#000000',
+                logoSvg: `<svg viewBox="0 0 100 100" class="w-10 h-10"><rect x="10" y="10" width="80" height="80" rx="15" fill="#C30452"/><text x="50" y="60" font-family="Montserrat" font-weight="900" font-size="30" fill="#FFF" text-anchor="middle">LG</text></svg>`,
+                mvps: [
+                    { name: '오스틴', pos: '내야수', highlight: '잠실 최고의 외국인 해결사 파워 거포', type: 'batter', stats: { main: '.318 BA', sub1: '25 HR', sub2: '74 RBI' } },
+                    { name: '홍창기', pos: '외야수', highlight: '사기적인 볼넷 출루율과 정교한 기둥 테이블세터', type: 'batter', stats: { main: '.465 OBP', sub1: '.312 BA', sub2: '92 Runs' } },
+                    { name: '오지환', pos: '내야수', highlight: '명품 내야 수비 사령탑이자 가을 기적의 주역', type: 'batter', stats: { main: '.272 BA', sub1: '12 HR', sub2: '58 RBI' } }
+                ]
+            },
+            {
+                id: 'doosan',
+                name: '두산 베어스',
+                origin: '서울',
+                desc: '미라클 두산의 끈끈한 승부처 집념과 폭발력을 내세우는 잠실의 곰 마스코트 군단.',
+                lastChampionship: '2019년',
+                totalChampionships: '6회',
+                color: '#131230',
+                subColor: '#ED1C24',
+                logoSvg: `<svg viewBox="0 0 100 100" class="w-10 h-10"><circle cx="50" cy="50" r="45" fill="#131230"/><text x="50" y="60" font-family="Montserrat" font-weight="900" font-size="32" fill="#FFF" text-anchor="middle">OB</text></svg>`,
+                mvps: [
+                    { name: '양의지', pos: '포수', highlight: '영리한 볼 배합과 공수 겸장 대한민국 안방마님', type: 'batter', stats: { main: '.310 BA', sub1: '16 HR', sub2: '68 RBI' } },
+                    { name: '곽빈', pos: '투수 (선발)', highlight: '팀 마운드의 기동력을 보증하는 핵심 선발 강속구', type: 'pitcher', stats: { main: '9 W', sub1: '3.21 ERA', sub2: '105 K' } },
+                    { name: '양석환', pos: '내야수', highlight: '팀의 장타력을 책임지는 거포이자 사령탑 내야수', type: 'batter', stats: { main: '.268 BA', sub1: '22 HR', sub2: '74 RBI' } }
+                ]
+            },
+            {
+                id: 'lotte',
+                name: '롯데 자이언츠',
+                origin: '부산',
+                desc: '구도 부산의 뜨거운 열정과 압도적인 홈 관중 응원으로 그라운드를 뒤흔드는 자이언츠.',
+                lastChampionship: '1992년',
+                totalChampionships: '2회',
+                color: '#041E42',
+                subColor: '#D00F31',
+                logoSvg: `<svg viewBox="0 0 100 100" class="w-10 h-10"><rect x="10" y="10" width="80" height="80" rx="15" fill="#041E42"/><text x="50" y="60" font-family="Montserrat" font-weight="900" font-size="28" fill="#FFF" text-anchor="middle">LOT</text></svg>`,
+                mvps: [
+                    { name: '레이예스', pos: '외야수', highlight: '사직의 최고 대포, 안타 제조 능력 탁월', type: 'batter', stats: { main: '.335 BA', sub1: '15 HR', sub2: '65 RBI' } },
+                    { name: '박세웅', pos: '투수 (선발)', highlight: '안경 에이스 계보를 잇는 든든한 국내 토종 선발', type: 'pitcher', stats: { main: '7 W', sub1: '3.65 ERA', sub2: '88 K' } },
+                    { name: '황성빈', pos: '외야수', highlight: '그라운드를 발로 헤집는 최고의 돌격 대장', type: 'batter', stats: { main: '.308 BA', sub1: '32 SB', sub2: '45 Runs' } }
+                ]
+            },
+            {
+                id: 'hanwha',
+                name: '한화 이글스',
+                origin: '대전',
+                desc: '에이스 류현진의 노련한 투구와 한화 특유의 뜨거운 팬덤이 결합된 오렌지 불꽃 군단.',
+                lastChampionship: '1999년',
+                totalChampionships: '1회',
+                color: '#FF6600',
+                subColor: '#000000',
+                logoSvg: `<svg viewBox="0 0 100 100" class="w-10 h-10"><circle cx="50" cy="50" r="45" fill="#FF6600"/><text x="50" y="60" font-family="Montserrat" font-weight="900" font-size="28" fill="#000" text-anchor="middle">HE</text></svg>`,
+                mvps: [
+                    { name: '류현진', pos: '투수 (선발)', highlight: '명품 제구력의 괴물 복귀 에이스, 대전의 왕', type: 'pitcher', stats: { main: '9 W', sub1: '2.88 ERA', sub2: '102 K' } },
+                    { name: '노시환', pos: '내야수', highlight: '이글스의 현재이자 미래인 젊은 홈런왕 우타자', type: 'batter', stats: { main: '.288 BA', sub1: '26 HR', sub2: '82 RBI' } },
+                    { name: '채은성', pos: '내야수', highlight: '든든한 장타력과 베테랑 기질로 라인업을 받치는 주춧돌', type: 'batter', stats: { main: '.278 BA', sub1: '14 HR', sub2: '66 RBI' } }
+                ]
+            },
+            {
+                id: 'ssg',
+                name: 'SSG 랜더스',
+                origin: '인천',
+                desc: '인천 야구의 든든한 화력과 홈런본능을 앞세워 매 시즌 상위권 도약을 위협하는 군단.',
+                lastChampionship: '2022년',
+                totalChampionships: '5회',
+                color: '#E30613',
+                subColor: '#FFFFFF',
+                logoSvg: `<svg viewBox="0 0 100 100" class="w-10 h-10"><circle cx="50" cy="50" r="45" fill="#E30613"/><text x="50" y="58" font-family="Montserrat" font-weight="900" font-size="26" fill="#FFF" text-anchor="middle">SSG</text></svg>`,
+                mvps: [
+                    { name: '최정', pos: '내야수', highlight: 'KBO 역대 최다 홈런 신화의 살아있는 전설', type: 'batter', stats: { main: '.291 BA', sub1: '24 HR', sub2: '70 RBI' } },
+                    { name: '김광현', pos: '투수 (선발)', highlight: '인천 야구를 상징하는 최고의 좌완 수호신', type: 'pitcher', stats: { main: '8 W', sub1: '3.42 ERA', sub2: '98 K' } },
+                    { name: '에레디아', pos: '외야수', highlight: '정교한 컨택트와 악마 같은 출루율의 외인', type: 'batter', stats: { main: '.331 BA', sub1: '11 HR', sub2: '55 RBI' } }
+                ]
+            },
+            {
+                id: 'nc',
+                name: 'NC 다이노스',
+                origin: '창원',
+                desc: '기동성 있는 수비 야구와 강력한 신예 외인 타자 군단을 앞세워 폭풍을 일으키는 다이노스.',
+                lastChampionship: '2020년',
+                totalChampionships: '1회',
+                color: '#005596',
+                subColor: '#FFFFFF',
+                logoSvg: `<svg viewBox="0 0 100 100" class="w-10 h-10"><circle cx="50" cy="50" r="45" fill="#005596"/><text x="50" y="58" font-family="Montserrat" font-weight="900" font-size="28" fill="#FFF" text-anchor="middle">NC</text></svg>`,
+                mvps: [
+                    { name: '박건우', pos: '외야수', highlight: '팀 타선의 가장 믿음직한 정밀 타격 해결사', type: 'batter', stats: { main: '.322 BA', sub1: '10 HR', sub2: '58 RBI' } },
+                    { name: '하트', pos: '투수 (선발)', highlight: '탈삼진쇼를 주도하는 2026 시즌 신개념 외인 좌완', type: 'pitcher', stats: { main: '10 W', sub1: '2.62 ERA', sub2: '115 K' } },
+                    { name: '김주원', pos: '내야수', highlight: '창원 수비의 기둥이자 스위치 히터 유격수', type: 'batter', stats: { main: '.255 BA', sub1: '8 HR', sub2: '42 RBI' } }
+                ]
+            },
+            {
+                id: 'kt',
+                name: 'KT 위즈',
+                origin: '수원',
+                desc: '정규 시즌 후반기마다 마법처럼 깨어나며 리그 중상위권 판도를 흔드는 위즈 군단.',
+                lastChampionship: '2021년',
+                totalChampionships: '1회',
+                color: '#000000',
+                subColor: '#E20613',
+                logoSvg: `<svg viewBox="0 0 100 100" class="w-10 h-10"><rect x="10" y="10" width="80" height="80" rx="15" fill="#000000"/><text x="50" y="62" font-family="Montserrat" font-weight="900" font-size="28" fill="#FFF" text-anchor="middle">Wiz</text></svg>`,
+                mvps: [
+                    { name: '강백호', pos: '포수 / 내야수', highlight: '어떤 볼이든 쪼개버리는 폭발적 타격 귀재', type: 'batter', stats: { main: '.315 BA', sub1: '23 HR', sub2: '75 RBI' } },
+                    { name: '고영표', pos: '투수 (선발)', highlight: '체인지업의 마술사, 승리를 보증하는 제구력', type: 'pitcher', stats: { main: '10 W', sub1: '3.08 ERA', sub2: '85 K' } },
+                    { name: '배정대', pos: '외야수', highlight: '끝내기 안타의 예술가, 극단적인 클러치 해결사', type: 'batter', stats: { main: '.282 BA', sub1: '8 HR', sub2: '50 RBI' } }
+                ]
+            },
+            {
+                id: 'kiwoom',
+                name: '키움 히어로즈',
+                origin: '서울',
+                desc: '고척스카이돔을 홈으로 하며 젊고 젊은 주역들의 육성 본능과 빠른 야구로 무장한 영웅들.',
+                lastChampionship: '없음',
+                totalChampionships: '0회',
+                color: '#570514',
+                subColor: '#FFFFFF',
+                logoSvg: `<svg viewBox="0 0 100 100" class="w-10 h-10"><rect x="10" y="10" width="80" height="80" rx="15" fill="#570514"/><text x="50" y="60" font-family="Montserrat" font-weight="900" font-size="28" fill="#FFF" text-anchor="middle">WOO</text></svg>`,
+                mvps: [
+                    { name: '송성문', pos: '내야수', highlight: '팀 타선을 든든하게 주도하는 영웅 군단 캡틴', type: 'batter', stats: { main: '.312 BA', sub1: '12 HR', sub2: '60 RBI' } },
+                    { name: '헤이수스', pos: '투수 (선발)', highlight: '최고 150km 중반대 강속구를 뿌리는 막강한 왼손 거포', type: 'pitcher', stats: { main: '11 W', sub1: '2.80 ERA', sub2: '108 K' } },
+                    { name: '이주형', pos: '외야수', highlight: '포스트 이정후라 불리는 차세대 천재 타자', type: 'batter', stats: { main: '.305 BA', sub1: '9 HR', sub2: '48 RBI' } }
+                ]
+            }
+        ];
+
+        // 2026 Season Real Win-Rate trends
+        const CHART_LABELS = ['3월 개막', '4월 중순', '5월 중순', '6월 중순', '7월 현재'];
+        const WIN_RATE_TRENDS = {
+            kia: [0.580, 0.560, 0.520, 0.540, 0.536],     // 4위
+            samsung: [0.500, 0.505, 0.590, 0.605, 0.614], // 1위
+            lg: [0.450, 0.620, 0.615, 0.610, 0.612],      // 2위
+            doosan: [0.520, 0.500, 0.530, 0.510, 0.518],  // 5위
+            lotte: [0.420, 0.440, 0.460, 0.450, 0.472],   // 8위
+            hanwha: [0.560, 0.540, 0.510, 0.490, 0.500],   // 6위
+            ssg: [0.510, 0.490, 0.480, 0.470, 0.485],     // 7위
+            nc: [0.490, 0.480, 0.450, 0.480, 0.461],      // 9위
+            kt: [0.470, 0.510, 0.540, 0.560, 0.573],      // 3위
+            kiwoom: [0.400, 0.410, 0.430, 0.420, 0.420]   // 10위
+        };
+
+        const TEAM_COLORS_MAP = {
+            kia: '#EA0029', samsung: '#074CA1', lg: '#C30452', doosan: '#131230', lotte: '#041E42',
+            hanwha: '#FF6600', ssg: '#E30613', nc: '#005596', kt: '#000000', kiwoom: '#570514'
+        };
+
+        const INFLECTION_POINTS = [
+            {
+                teamId: 'samsung', index: 2, 
+                title: '🦁 5월 사자군단의 각성! 원태인 지배적 퀄리티스타트 연속 투구',
+                date: '2026년 5월 15일', matchSummary: '삼성 라이온즈 vs KT 위즈 (대구)',
+                mvpName: '원태인', impact: '+0.085',
+                videoUrl: 'https://www.youtube-nocookie.com/embed/Zzu5_Hgy-0c?rel=0',
+                story: '삼성 원태인의 5월 명품 체인지업 릴레이가 시작되며 팀이 거침없는 6연승을 달성했습니다. 승률 곡선이 수직 도약하며 리그 1위를 쟁취했습니다.',
+                comments: [
+                    { user: '대구사자맨', platform: '네이버', text: '원태인 던지는 날은 맘놓고 치맥 시킨다 진짜 ㅋㅋㅋ', likes: 198 },
+                    { user: '삼팬은사랑', platform: 'MLBPARK', text: '체인지업 무브먼트 보소... 궤적이 완전히 춤을 춘다.', likes: 142 },
+                    { user: '야구마니아', platform: '네이버', text: '5월의 삼성은 투타가 완벽한 우승 후보 전력 수준!', likes: 110 }
+                ]
+            },
+            {
+                teamId: 'lg', index: 1, 
+                title: '⚾ 디펜딩 챔프 LG, 4월 폭풍 8연승 질주',
+                date: '2026년 4월 20일', matchSummary: 'LG 트윈스 vs 두산 베어스 (잠실)',
+                mvpName: '오스틴', impact: '+0.170',
+                videoUrl: 'https://www.youtube-nocookie.com/embed/wEBIv6N2Q88?rel=0',
+                story: '시즌 초 슬로우 스타트를 탈출해 4월 해결사 오스틴의 끝내기 그랜드슬램으로 라이벌전 스윕승을 달성, 승률 6할을 단숨에 돌파했습니다.',
+                comments: [
+                    { user: '유광점퍼사러감', platform: 'MLBPARK', text: '오스틴 진짜 해결사 기질은 KBO 역대 최고 외인인 듯', likes: 320 },
+                    { user: '트윈스파워', platform: '네이버', text: '잠실 홈 관중 함성 소리 영종도까지 들렸다 ㅋㅋㅋ', likes: 185 },
+                    { user: '잠실의봄', platform: '네이버', text: '역시 봄의 LG는 누구도 막을 수 없구먼 ㄷㄷ', likes: 111 }
+                ]
+            },
+            {
+                teamId: 'kt', index: 3, 
+                title: '🧙 마법의 후반기 본능! 고영표 무사사구 완봉 승리',
+                date: '2026년 6월 18일', matchSummary: 'KT 위즈 vs KIA 타이거즈 (수원)',
+                mvpName: '고영표', impact: '+0.050',
+                videoUrl: 'https://www.youtube-nocookie.com/embed/Zzu5_Hgy-0c?rel=0',
+                story: '중위권에 정체해있던 고영표가 기막힌 완투 능력을 뽐내며 6월의 마술 같은 전원 승리를 견인, 5할 승률 위로 안착시켰습니다.',
+                comments: [
+                    { user: '수원의고박사', platform: '네이버', text: '고영표 체인지업은 진짜 치트키 아닌가?', likes: 154 },
+                    { user: '마법사팬', platform: 'MLBPARK', text: 'KT 후반기 올라오는 각도 보소.. 올해도 대역전극 예약인가?', likes: 98 },
+                    { user: '데이터킹', platform: '네이버', text: '그래프 보는데 소름 돋았음. 역시 슬로우스타터 명가', likes: 74 }
+                ]
+            },
+            {
+                teamId: 'kia', index: 0,
+                title: '🐯 호랑이 군단 개막전 대화력쇼! 김도영 솔로 홈런',
+                date: '2026년 3월 28일', matchSummary: 'KIA 타이거즈 vs 키움 히어로즈 (광주)',
+                mvpName: '김도영', impact: '+0.080',
+                videoUrl: 'https://www.youtube-nocookie.com/embed/wEBIv6N2Q88?rel=0',
+                story: '시즌 개막 직후 김도영의 시원한 우월 솔로 홈런을 기점으로 기아가 경기 초반 3연승을 장악하여 봄 기운을 정조준했습니다.',
+                comments: [
+                    { user: '광주호랑이', platform: '네이버', text: '김도영 올해 진짜 사고 한 번 칠 기세다 ㄷㄷ', likes: 210 },
+                    { user: 'KBO정밀분석', platform: 'MLBPARK', text: '타격 메커니즘이 완전히 프로그레시브하게 정립되었음.', likes: 165 },
+                    { user: '포크볼러', platform: '네이버', text: '개막전 직관 승리는 언제나 짜릿함!', likes: 132 }
+                ]
+            },
+            {
+                teamId: 'doosan', index: 2,
+                title: '🐻 미라클 두산의 저력! 양의지 역전 싹쓸이 2루타',
+                date: '2026년 5월 20일', matchSummary: '두산 베어스 vs 롯데 자이언츠 (잠실)',
+                mvpName: '양의지', impact: '+0.030',
+                videoUrl: 'https://www.youtube-nocookie.com/embed/Zzu5_Hgy-0c?rel=0',
+                story: '경기 9회말 2사 만루의 절체절명 위기에서 백전노장 양의지의 노련한 우전 안타로 극적 역전승을 거두며 승률 반등에 기여했습니다.',
+                comments: [
+                    { user: '곰돌이짱', platform: 'MLBPARK', text: '역시 돈값 제대로 하는 양안방마님 클래스 ㄷㄷ', likes: 245 },
+                    { user: '두산우승가자', platform: '네이버', text: '치고 나가는 궤적이 완벽한 예술이었음!', likes: 121 },
+                    { user: '잠실지킴이', platform: '네이버', text: '이 맛에 직관 갑니다 진짜 ㅋㅋㅋ', likes: 95 }
+                ]
+            },
+            {
+                teamId: 'hanwha', index: 1,
+                title: '🦅 괴물 류현진의 퀄리티 스타트 플러스! 대전 완벽 승리',
+                date: '2026년 4월 15일', matchSummary: '한화 이글스 vs 삼성 라이온즈 (대전)',
+                mvpName: '류현진', impact: '+0.040',
+                videoUrl: 'https://www.youtube-nocookie.com/embed/wEBIv6N2Q88?rel=0',
+                story: '복귀 이후 압도적인 구석구석 코너워크와 서클체인지업으로 삼성 타선을 7이닝 무실점으로 잠재우고 귀중한 선발승을 따냈습니다.',
+                comments: [
+                    { user: '독수리투혼', platform: '네이버', text: '현진이 형 던질 때는 야구가 진짜 편하다 ㅋㅋㅋ', likes: 188 },
+                    { user: '괴물수호신', platform: 'MLBPARK', text: '구속을 떠나서 제구력이 진짜 기만적일 정도로 정교함.', likes: 134 },
+                    { user: '보크의제왕', platform: '네이버', text: '역시 야구는 던질 줄 아는 투수가 지배한다.', likes: 99 }
+                ]
+            },
+            {
+                teamId: 'ssg', index: 4,
+                title: '🚀 랜더스의 끝내기 홈런! 최정 역전 끝내기 대폭발',
+                date: '2026년 7월 05일', matchSummary: 'SSG 랜더스 vs NC 다이노스 (인천)',
+                mvpName: '최정', impact: '+0.015',
+                videoUrl: 'https://www.youtube-nocookie.com/embed/Zzu5_Hgy-0c?rel=0',
+                story: '7월 초반 승률 정체기에 빠진 팀을 구한 최정의 기막힌 9회말 끝내기 3점포! 홈런 공장장다운 묵직한 타구를 뿜었습니다.',
+                comments: [
+                    { user: '인천소년', platform: '네이버', text: '최정은 진짜 사기 캐릭터다... 어떻게 맨날 홈런이지?', likes: 232 },
+                    { user: '랜더스사랑', platform: 'MLBPARK', text: '오늘 경기 직관 못 간 내 인생이 레전드다 ㅠㅠ', likes: 112 },
+                    { user: '포크볼짱', platform: '네이버', text: '소름 돋았음. 역시 슬러거의 기백!', likes: 87 }
+                ]
+            },
+            {
+                teamId: 'lotte', index: 2,
+                title: '⚓ 부산의 거인들이 울부짖다! 레이예스 결승 투런',
+                date: '2026년 5월 10일', matchSummary: '롯데 자이언츠 vs LG 트윈스 (사직)',
+                mvpName: '레이예스', impact: '+0.020',
+                videoUrl: 'https://www.youtube-nocookie.com/embed/wEBIv6N2Q88?rel=0',
+                story: '사직구장 3만 관중을 열광케 한 레이예스의 파괴력 있는 중월 투런 홈런 한 방으로 롯데가 완승을 거두며 하위권 탈출의 변곡점을 마련했습니다.',
+                comments: [
+                    { user: '사직갈매기', platform: '네이버', text: '레이예스 여권 뺏어라! 부산 뼈를 묻게 하자 ㅋㅋㅋ', likes: 310 },
+                    { user: '롯팬은울어', platform: 'MLBPARK', text: '응원단 육성 데시벨 진짜 영도대교까지 들림.', likes: 154 },
+                    { user: '롯데제과대박', platform: '네이버', text: '이 분위기 타서 가을 야구 기원 드가자!', likes: 104 }
+                ]
+            },
+            {
+                teamId: 'nc', index: 3,
+                title: '🦕 다이노스 마운드의 기적! 하트 10탈삼진 완벽 투구',
+                date: '2026년 6월 12일', matchSummary: 'NC 다이노스 vs 두산 베어스 (창원)',
+                mvpName: '하트', impact: '+0.030',
+                videoUrl: 'https://www.youtube-nocookie.com/embed/Zzu5_Hgy-0c?rel=0',
+                story: '하트의 완벽한 슬라이더와 고속 싱커 조합으로 두산의 막강 우타 라인업을 상대로 무려 10K를 뺏어내며 6월의 도약을 선도했습니다.',
+                comments: [
+                    { user: '창원공룡', platform: '네이버', text: 'NC 스카우터들은 어디서 이런 보물을 데려오냐?', likes: 145 },
+                    { user: '다이노맨', platform: 'MLBPARK', text: '슬라이더 꺾이는 각도가 완전히 투구판 사기 수준 ㄷㄷ', likes: 98 },
+                    { user: '안경에이스', platform: '네이버', text: '창원 직관 구장 시설도 좋고 경기까지 이기니 최고!', likes: 74 }
+                ]
+            },
+            {
+                teamId: 'kiwoom', index: 2,
+                title: '🦸 영웅들의 근성 야구! 송성문의 결승 희생 플라이',
+                date: '2026년 5월 08일', matchSummary: '키움 히어로즈 vs 한화 이글스 (고척)',
+                mvpName: '송성문', impact: '+0.020',
+                videoUrl: 'https://www.youtube-nocookie.com/embed/wEBIv6N2Q88?rel=0',
+                story: '접전 끝 연장 11회말에 터진 송성문의 집념 어린 희생 타격으로 끝내기 점수를 올리며 고척 영웅들의 근성 야구를 시전했습니다.',
+                comments: [
+                    { user: '고척돔수호', platform: '네이버', text: '송성문 진짜 캡틴의 자격 차고 넘친다!', likes: 120 },
+                    { user: '키움파이팅', platform: 'MLBPARK', text: '매경기 조마조마하지만 이기는 맛에 영웅들 응원하지', likes: 94 },
+                    { user: '돔구장짱', platform: '네이버', text: '여름 고척돔은 진짜 에어컨 빵빵하고 신세계임', likes: 82 }
+                ]
+            }
+        ];
+
+        // 10 Detailed Questions for DNA Fan Test
+        const QUIZ_QUESTIONS_DATA = [
+            {
+                q: "1. 경기 시작 2시간 전, 내 스마트폰 상태는?",
+                a: "오늘 상대 선발 투수의 최근 3경기 구속 변화율과 상대 전적 데이터를 탐독한다.",
+                b: "단톡방에 '치킨 주문했냐?', '유니폼 챙겼지?'라며 벌써부터 도파민이 터진다.",
+                scoreA: { rational: 2, solo: 1 },
+                scoreB: { emotional: 2, social: 2 }
+            },
+            {
+                q: "2. 응원팀 유니폼을 구매할 때 내가 가장 중요하게 보는 기준은?",
+                a: "이 선수가 향후 3년 동안 팀에 잔류할 것인가? (연봉 잔여 조건, 에이징 커브 분석)",
+                b: "유니폼을 입었을 때 핏이 예쁜가? 혹은 등번호 마킹의 디자인이 유니크한가?",
+                scoreA: { rational: 2, solo: 1 },
+                scoreB: { emotional: 2, social: 1 }
+            },
+            {
+                q: "3. 9회말 2사 만루 역전 찬스! 내 마음상태는?",
+                a: "상대 투수의 구질과 제구 상태를 보며 침착하게 볼 카운트를 계산한다.",
+                b: "온몸에 소름이 돋고 두 손을 모아 '제발 한 방만!' 기도하며 징크스를 의지한다.",
+                scoreA: { rational: 2, solo: 1 },
+                scoreB: { emotional: 2, social: 1 }
+            },
+            {
+                q: "4. 선발 투수가 초반 3이닝 7실점을 하고 내려갈 때 내 리액션은?",
+                a: "내일 경기를 위해 오늘 필승조는 아끼고 추격조로 이닝 채우는 게 이득이라며 탭을 접는다.",
+                b: "당장 응원 단톡방이나 야구 커뮤니티에 분통을 터트리는 울분의 글을 쓴다.",
+                scoreA: { rational: 2, solo: 1 },
+                scoreB: { emotional: 2, social: 2 }
+            },
+            {
+                q: "5. 야구장 직관 도착 후 내가 가장 먼저 향하는 목적지는?",
+                a: "전술 구도와 투구 궤적이 가장 명밀히 보이는 좌석으로 곧바로 향한다.",
+                b: "야구장 시그니처 크림새우, 떡볶이 냄새가 진동하는 푸드 코트로 질주한다.",
+                scoreA: { rational: 1, solo: 2 },
+                scoreB: { emotional: 2, social: 2 }
+            },
+            {
+                q: "6. 야구 커뮤니티에서 가장 먼저 클릭하는 게시물은?",
+                a: "릴리스 포인트 정밀 분석 그래프 및 구질 비교 수치 데이터 글",
+                b: "오늘 구자욱/김도영 직찍 사진 대방출 및 관중 리액션 짤",
+                scoreA: { rational: 2, solo: 1 },
+                scoreB: { emotional: 1, social: 1 }
+            },
+            {
+                q: "7. 위협구 시비로 양 팀의 벤치 클리어링이 발생했을 때 내 태도는?",
+                a: "퇴장 처리에 따른 후속 마운드 전력 분석을 전개한다.",
+                b: "자리를 박차고 일어나 상대 선수단을 향해 거친 함성과 야유를 보탠다.",
+                scoreA: { rational: 2, solo: 1 },
+                scoreB: { emotional: 2, social: 2 }
+            },
+            {
+                q: "8. 팀이 깊은 연패의 늪에 빠져 승률이 급락할 때 나의 행동은?",
+                a: "감독의 투수 기용 타이밍 미스를 짚은 정밀 연계 분석 칼럼을 써서 공유한다.",
+                b: "그럼에도 불구하고 직관 티켓을 재예매하며 유광 점퍼를 정성스레 다려 입는다.",
+                scoreA: { rational: 2, solo: 1 },
+                scoreB: { emotional: 2, social: 1 }
+            },
+            {
+                q: "9. 야구를 전혀 모르는 생초보 친구가 룰에 대해 폭풍 질문을 던진다면?",
+                a: "인필드 플라이, 보크의 엄격한 판정 룰 규칙집을 정성껏 해설해 준다.",
+                b: "설명은 나중! '전광판에 안타라고 뜨면 나랑 똑같이 양손 들고 흔들어!' 응원 타월을 쥐여준다.",
+                scoreA: { rational: 2, solo: 1 },
+                scoreB: { emotional: 2, social: 2 }
+            },
+            {
+                q: "10. 나에게 야구란 어떤 가치인가?",
+                a: "일상에서 영위하는 가장 높은 뇌지컬 시뮬레이터이자 고효율 스포츠 수치 게임",
+                b: "내 하루의 감정선을 쥐락팎락하며, 평생 절대 끊어낼 수 없는 미련 가득한 동반자",
+                scoreA: { rational: 2, solo: 2 },
+                scoreB: { emotional: 2, social: 2 }
+            }
+        ];
+
+        // 7-Day Schedule synchronized with real KBO calendar
+        const WEEKLY_SCHEDULE_DATA = [
+            { date: '7월 13일 (월)', team1: '전 구단', score1: '休', team2: '올스타 브레이크', score2: '休', stadium: '정비 휴식기', state: 'break' },
+            { date: '7월 14일 (화)', team1: '전 구단', score1: '休', team2: '올스타 브레이크', score2: '休', stadium: '정비 휴식기', state: 'break' },
+            { date: '7월 15일 (수)', team1: '전 구단', score1: '休', team2: '올스타 브레이크', score2: '休', stadium: '정비 휴식기', state: 'break' },
+            { date: '7월 16일 (목) 18:30', team1: 'KIA', score1: '-', team2: 'SSG', score2: '-', stadium: '인천 SSG 랜더스필드', state: 'game' },
+            { date: '7월 16일 (목) 18:30', team1: 'KT', score1: '-', team2: 'LG', score2: '-', stadium: '서울 잠실 야구장', state: 'game' },
+            { date: '7월 16일 (목) 18:30', team1: '롯데', score1: '-', team2: '삼성', score2: '-', stadium: '대구 삼성 라이온즈 파크', state: 'game' },
+            { date: '7월 16일 (목) 18:30', team1: '두산', score1: '-', team2: 'NC', score2: '-', stadium: '창원 NC 파크', state: 'game' },
+            { date: '7월 16일 (목) 18:30', team1: '키움', score1: '-', team2: '한화', score2: '-', stadium: '대전 한화생명 이글스파크', state: 'game' },
+            { date: '7월 17일 (금) 18:00', team1: 'KIA', score1: '-', team2: 'SSG', score2: '-', stadium: '인천 SSG 랜더스필드', state: 'game' },
+            { date: '7월 17일 (금) 18:00', team1: 'KT', score1: '-', team2: 'LG', score2: '-', stadium: '서울 잠실 야구장', state: 'game' },
+            { date: '7월 17일 (금) 18:00', team1: '롯데', score1: '-', team2: '삼성', score2: '-', stadium: '대구 삼성 라이온즈 파크', state: 'game' },
+            { date: '7월 17일 (금) 18:00', team1: '두산', score1: '-', team2: 'NC', score2: '-', stadium: '창원 NC 파크', state: 'game' },
+            { date: '7월 17일 (금) 18:00', team1: '키움', score1: '-', team2: '한화', score2: '-', stadium: '대전 한화생명 이글스파크', state: 'game' }
+        ];
+    </script>
+
+    <!-- INTERACTIVE SCRIPTS -->
+    <script>
+        // My Team Custom Variable Styling Deco Package (테마 가시화 로직 강화)
+        function selectMyTeam(teamId) {
+            if (!teamId) return;
+            localStorage.setItem('kbo_my_team', teamId);
+            const team = KBO_TEAMS_DATA.find(t => t.id === teamId);
+            if (team) {
+                // Tailwind 커스텀 색상 매핑을 위한 CSS 변수 재정의
+                document.documentElement.style.setProperty('--brand-primary', team.color);
+                document.documentElement.style.setProperty('--brand-secondary', team.subColor || '#FF6B00');
+                
+                // DOM 요소들의 색상 직접 제어를 통한 완벽한 전속 테마 변조 구현
+                const navLogoIcon = document.getElementById('navLogoIcon');
+                if (navLogoIcon) navLogoIcon.style.color = team.color;
+
+                const navLogoText = document.getElementById('navLogoText');
+                if (navLogoText) {
+                    navLogoText.style.backgroundImage = `linear-gradient(to right, ${team.color}, ${team.subColor || '#FF6B00'})`;
+                }
+
+                const heroBadge = document.getElementById('heroBadge');
+                if (heroBadge) {
+                    heroBadge.style.backgroundColor = `${team.color}15`;
+                    heroBadge.style.color = team.color;
+                }
+
+                const heroBadgeDot = document.getElementById('heroBadgeDot');
+                if (heroBadgeDot) heroBadgeDot.style.backgroundColor = team.color;
+
+                const heroGradientTitle = document.getElementById('heroGradientTitle');
+                if (heroGradientTitle) {
+                    heroGradientTitle.style.backgroundImage = `linear-gradient(to right, ${team.color}, ${team.subColor || '#FF6B00'})`;
+                }
+
+                const btnHeroGraph = document.getElementById('btnHeroGraph');
+                if (btnHeroGraph) btnHeroGraph.style.backgroundColor = team.color;
+
+                const pollHeaderBadge = document.getElementById('pollHeaderBadge');
+                if (pollHeaderBadge) {
+                    pollHeaderBadge.style.backgroundColor = `${team.color}15`;
+                    pollHeaderBadge.style.color = team.color;
+                }
+
+                const btnVoteYes = document.getElementById('btnVoteYes');
+                if (btnVoteYes) btnVoteYes.style.backgroundColor = team.color;
+
+                const rankSectionIcon = document.getElementById('rankSectionIcon');
+                if (rankSectionIcon) rankSectionIcon.style.color = team.color;
+
+                const rankFirstPlaceBadge = document.getElementById('rankFirstPlaceBadge');
+                if (rankFirstPlaceBadge) rankFirstPlaceBadge.style.color = team.color;
+
+                const rankFirstPlaceBox = document.getElementById('rankFirstPlaceBox');
+                if (rankFirstPlaceBox) {
+                    rankFirstPlaceBox.style.backgroundColor = `${team.color}08`;
+                    rankFirstPlaceBox.style.borderColor = `${team.color}30`;
+                }
+
+                const rankDataSyncText = document.getElementById('rankDataSyncText');
+                if (rankDataSyncText) rankDataSyncText.style.color = team.subColor || '#FF6B00';
+
+                const rankDataSyncBox = document.getElementById('rankDataSyncBox');
+                if (rankDataSyncBox) {
+                    rankDataSyncBox.style.backgroundColor = `${team.subColor || '#FF6B00'}08`;
+                    rankDataSyncBox.style.borderColor = `${team.subColor || '#FF6B00'}30`;
+                }
+
+                const btnFilterAll = document.getElementById('btnFilterAll');
+                if (btnFilterAll) btnFilterAll.style.backgroundColor = team.color;
+
+                const modalHeader = document.getElementById('modalHeader');
+                if (modalHeader) {
+                    modalHeader.style.backgroundImage = `linear-gradient(to right, ${team.color}, ${team.color}EE)`;
+                }
+                const modalHeaderIcon = document.getElementById('modalHeaderIcon');
+                if (modalHeaderIcon) modalHeaderIcon.style.color = team.subColor || '#FF6B00';
+                const modalHeroAvatar = document.getElementById('modalHeroAvatar');
+                if (modalHeroAvatar) modalHeroAvatar.style.color = team.color;
+                const modalChartTitleIcon = document.getElementById('modalChartTitleIcon');
+                if (modalChartTitleIcon) modalChartTitleIcon.style.color = team.color;
+                const modalPlayerPos = document.getElementById('modalPlayerPos');
+                if (modalPlayerPos) modalPlayerPos.style.backgroundColor = team.subColor || '#FF6B00';
+
+                const chartRoomBadge = document.getElementById('chartRoomBadge');
+                if (chartRoomBadge) {
+                    chartRoomBadge.style.backgroundColor = `${team.color}15`;
+                    chartRoomBadge.style.color = team.color;
+                }
+
+                const strongTextMarker1 = document.getElementById('strongTextMarker1');
+                if (strongTextMarker1) strongTextMarker1.style.color = team.color;
+                const strongTextMarker2 = document.getElementById('strongTextMarker2');
+                if (strongTextMarker2) strongTextMarker2.style.color = team.subColor || '#FF6B00';
+
+                const inflectionOuterCard = document.getElementById('inflectionOuterCard');
+                if (inflectionOuterCard) inflectionOuterCard.style.borderColor = team.color;
+                const inflectionBadge = document.getElementById('inflectionBadge');
+                if (inflectionBadge) inflectionBadge.style.backgroundColor = team.color;
+                const inflectionDateSpan = document.getElementById('inflectionDateSpan');
+                if (inflectionDateSpan) inflectionDateSpan.style.color = team.color;
+
+                const btnPitchFast = document.getElementById('btnPitchFast');
+                if (btnPitchFast) btnPitchFast.style.backgroundColor = team.color;
+                const btnPitchSlide = document.getElementById('btnPitchSlide');
+                if (btnPitchSlide) btnPitchSlide.style.backgroundColor = team.subColor || '#FF6B00';
+                const tacticalWarningIcon = document.getElementById('tacticalWarningIcon');
+                if (tacticalWarningIcon) tacticalWarningIcon.style.color = team.color;
+                const btnLiveBroadcasting = document.getElementById('btnLiveBroadcasting');
+                if (btnLiveBroadcasting) btnLiveBroadcasting.style.backgroundColor = team.color;
+
+                const communityLiveBadge = document.getElementById('communityLiveBadge');
+                if (communityLiveBadge) {
+                    communityLiveBadge.style.backgroundColor = `${team.color}15`;
+                    communityLiveBadge.style.color = team.color;
+                }
+                const weeklyMemeIconBox = document.getElementById('weeklyMemeIconBox');
+                if (weeklyMemeIconBox) {
+                    weeklyMemeIconBox.style.backgroundColor = `${team.color}15`;
+                    weeklyMemeIconBox.style.color = team.color;
+                }
+                const inputPenIcon = document.getElementById('inputPenIcon');
+                if (inputPenIcon) inputPenIcon.style.color = team.color;
+                const btnSubmitComment = document.getElementById('btnSubmitComment');
+                if (btnSubmitComment) btnSubmitComment.style.backgroundColor = team.color;
+
+                const scheduleHeaderBadge = document.getElementById('scheduleHeaderBadge');
+                if (scheduleHeaderBadge) {
+                    scheduleHeaderBadge.style.backgroundColor = `${team.color}15`;
+                    scheduleHeaderBadge.style.color = team.color;
+                }
+                const scheduleCalIcon = document.getElementById('scheduleCalIcon');
+                if (scheduleCalIcon) scheduleCalIcon.style.color = team.color;
+                const btnFilterScheduleAll = document.getElementById('btnFilterScheduleAll');
+                if (btnFilterScheduleAll) btnFilterScheduleAll.style.backgroundColor = team.color;
+
+                const beginnerHeaderBadge = document.getElementById('beginnerHeaderBadge');
+                if (beginnerHeaderBadge) {
+                    beginnerHeaderBadge.style.backgroundColor = `${team.color}15`;
+                    beginnerHeaderBadge.style.color = team.color;
+                }
+                const beginnerRuleTitle = document.getElementById('beginnerRuleTitle');
+                if (beginnerRuleTitle) beginnerRuleTitle.style.color = team.color;
+                const ruleIcon1 = document.getElementById('ruleIcon1');
+                if (ruleIcon1) {
+                    ruleIcon1.style.backgroundColor = `${team.color}15`;
+                    ruleIcon1.style.color = team.color;
+                }
+                const ruleIcon2 = document.getElementById('ruleIcon2');
+                if (ruleIcon2) {
+                    ruleIcon2.style.backgroundColor = `${team.subColor || '#FF6B00'}15`;
+                    ruleIcon2.style.color = team.subColor || '#FF6B00';
+                }
+                const beginnerRuleFooter = document.getElementById('beginnerRuleFooter');
+                if (beginnerRuleFooter) {
+                    beginnerRuleFooter.style.backgroundColor = `${team.color}05`;
+                    beginnerRuleFooter.style.borderColor = `${team.color}15`;
+                }
+                const beginnerRuleFooterText = document.getElementById('beginnerRuleFooterText');
+                if (beginnerRuleFooterText) beginnerRuleFooterText.style.color = team.color;
+
+                const quizHeaderBadge = document.getElementById('quizHeaderBadge');
+                if (quizHeaderBadge) {
+                    quizHeaderBadge.style.backgroundColor = `${team.color}15`;
+                    quizHeaderBadge.style.color = team.color;
+                }
+
+                // 12대 용어 사전 중 '클래식 지표' 카드들의 보라색/파란색 테마 동기화
+                document.querySelectorAll('.card-label-blue').forEach(el => el.style.color = team.color);
+                document.querySelectorAll('.card-back-blue').forEach(el => el.style.backgroundColor = team.color);
+
+                // 상징 텍스트/스타일 전환
+                const toastIcon = document.getElementById('toastIcon');
+                if (toastIcon) toastIcon.style.color = team.color;
+                const footerIcon = document.getElementById('footerIcon');
+                if (footerIcon) footerIcon.style.color = team.color;
+
+                // Update nav mini badge
+                const badge = document.getElementById('navMyTeamBadge');
+                badge.innerHTML = `
+                    <div class="flex items-center gap-1.5 bg-slate-100 border border-slate-200 px-3 py-1 rounded-full text-[10px] font-black shadow-sm">
+                        <span class="w-2.5 h-2.5 rounded-full inline-block" style="background-color: ${team.color}"></span>
+                        <span class="text-slate-700">마이팀: ${team.name.split(' ')[0]}</span>
+                    </div>
+                `;
+                badge.classList.remove('hidden');
+                
+                // Sync elements
+                const s1 = document.getElementById('myTeamSelectHero');
+                if (s1) s1.value = teamId;
+                const s2 = document.getElementById('myTeamSelectNav');
+                if (s2) s2.value = teamId;
+
+                // 차트 라인 갱신도 함께 수행 (활성화되어 있는 경우에 한함)
+                if (rollercoasterChartInstance) {
+                    // 차트 내 마스터 테마 갱신
+                    rollercoasterChartInstance.options.plugins.tooltip.titleColor = team.color;
+                    rollercoasterChartInstance.update();
+                }
+
+                showToast(`🎯 마이팀 [${team.name}] 연동 완료! 전속 상징색 테마가 전체 웹 서비스에 실시간 동기화되었습니다.`);
+            }
+        }
+
+        // Global Toast Notification
+        function showToast(msg) {
+            const toast = document.getElementById('toastNotification');
+            document.getElementById('toastMsg').textContent = msg;
+            toast.classList.remove('opacity-0', 'translate-y-20');
+            toast.classList.add('opacity-100', 'translate-y-0');
+            setTimeout(() => {
+                toast.classList.remove('opacity-100', 'translate-y-0');
+                toast.classList.add('opacity-0', 'translate-y-20');
+            }, 3000);
+        }
+
+        // Interactive Beginner Tab Controls
+        function switchBeginnerTab(tabId) {
+            document.querySelectorAll('.beginner-tab-view').forEach(view => view.classList.add('hidden'));
+            document.getElementById(`beginnerTab-${tabId}`).classList.remove('hidden');
+
+            // Button highlights
+            const tabs = ['rule', 'word'];
+            tabs.forEach(t => {
+                const btn = document.getElementById(`tabBtn-${t}`);
+                if (t === tabId) {
+                    btn.className = "flex-grow py-2.5 text-xs font-bold rounded-xl bg-white text-slate-800 shadow-sm transition-all";
+                } else {
+                    btn.className = "flex-grow py-2.5 text-xs font-bold rounded-xl text-slate-600 hover:text-slate-800 transition-all";
+                }
+            });
+        }
+
+        function flipCard(el) {
+            el.querySelector('.preserve-3d').classList.toggle('flipped');
+        }
+
+        // SEARCH FILTER FOR GLOSSARY CARDS
+        function filterGlossaryCards() {
+            const query = document.getElementById('glossarySearchInput').value.toLowerCase().trim();
+            const cards = document.querySelectorAll('.glossary-card');
+            
+            cards.forEach(card => {
+                const keywords = card.getAttribute('data-title').toLowerCase();
+                const innerText = card.textContent.toLowerCase();
+                if (keywords.includes(query) || innerText.includes(query)) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+    </script>
+
+    <!-- CHART ENGINE (WITH DEFAULT CLEAN VIEW & SCALING TOOL) -->
+    <script>
+        let rollercoasterChartInstance = null;
+        let zoomLevel = 1.0;
+        let activeDatasetsVisibility = {};
+
+        // Default Clean View Setting (Samsung, LG, KT only initially visible)
+        const DEFAULT_HIGHLIGHTED_TEAMS = ['samsung', 'lg', 'kt'];
+
+        const leftLabelsPlugin = {
+            id: 'leftLabels',
+            afterDatasetsDraw(chart) {
+                const { ctx, chartArea: { left }, scales: { y } } = chart;
+                ctx.save();
+                ctx.font = '900 11px Pretendard';
+                ctx.textBaseline = 'middle';
+                
+                chart.data.datasets.forEach((dataset, i) => {
+                    if (dataset.type !== 'scatter' && chart.isDatasetVisible(i)) {
+                        const firstValue = dataset.data[0].y;
+                        const yPos = y.getPixelForValue(firstValue);
+                        const labelText = dataset.label.split(' ')[0];
+                        
+                        ctx.fillStyle = dataset.borderColor;
+                        ctx.beginPath();
+                        ctx.arc(left + 6, yPos, 4, 0, 2 * Math.PI);
+                        ctx.fill();
+                        
+                        ctx.fillStyle = '#1E293B';
+                        ctx.fillText(labelText, left + 14, yPos);
+                    }
+                });
+                ctx.restore();
+            }
+        };
+
+        function findIntersections() {
+            const intersections = [];
+            const teamIds = Object.keys(WIN_RATE_TRENDS);
+            
+            for (let i = 0; i < CHART_LABELS.length - 1; i++) {
+                for (let t1 = 0; t1 < teamIds.length; t1++) {
+                    for (let t2 = t1 + 1; t2 < teamIds.length; t2++) {
+                        const id1 = teamIds[t1];
+                        const id2 = teamIds[t2];
+                        
+                        const y1a = WIN_RATE_TRENDS[id1][i];
+                        const y1b = WIN_RATE_TRENDS[id1][i+1];
+                        const y2a = WIN_RATE_TRENDS[id2][i];
+                        const y2b = WIN_RATE_TRENDS[id2][i+1];
+                        
+                        if ((y1a - y2a) * (y1b - y2b) < 0) {
+                            const denom = (y1b - y1a) - (y2b - y2a);
+                            if (denom !== 0) {
+                                const t = (y2a - y1a) / denom;
+                                if (t >= 0 && t <= 1) {
+                                    const exactX = i + t;
+                                    const exactY = y1a + t * (y1b - y1a);
+                                    
+                                    const teamName1 = KBO_TEAMS_DATA.find(t => t.id === id1).name;
+                                    const teamName2 = KBO_TEAMS_DATA.find(t => t.id === id2).name;
+                                    
+                                    intersections.push({
+                                        x: exactX,
+                                        y: exactY,
+                                        monthIndex: i,
+                                        team1: id1,
+                                        team2: id2,
+                                        team1Name: teamName1,
+                                        team2Name: teamName2,
+                                        title: `⚔️ ${teamName1.split(' ')[0]} vs ${teamName2.split(' ')[0]} 순위 대역전 교차점!`,
+                                        date: `${CHART_LABELS[i]} ~ ${CHART_LABELS[i+1]} 사이`,
+                                        comments: [
+                                            { user: '야구고수', platform: '네이버', text: '진짜 이때 두팀 기동력 차이가 판도 제대로 갈랐음.', likes: 145 },
+                                            { user: '트렌드분석가', platform: 'MLBPARK', text: '승률 역전 구간 꿀잼 명경기 주간이었음!', likes: 110 },
+                                            { user: '퇴근중이요', platform: '네이버', text: '지하철에서 폰 두개 켜서 본 승부사 경기 ㅋㅋㅋ', likes: 88 }
+                                        ]
+                                    });
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            return intersections;
+        }
+
+        // Zoom functionality mapping
+        function zoomChart(factor) {
+            zoomLevel *= factor;
+            if (zoomLevel < 0.5) zoomLevel = 0.5;
+            if (zoomLevel > 3.0) zoomLevel = 3.0;
+
+            const yMin = 0.300 + (0.100 * (1 - 1/zoomLevel));
+            const yMax = 0.650 - (0.100 * (1 - 1/zoomLevel));
+            
+            rollercoasterChartInstance.options.scales.y.min = Math.max(0.200, yMin);
+            rollercoasterChartInstance.options.scales.y.max = Math.min(0.800, yMax);
+            rollercoasterChartInstance.update();
+            showToast(`🔍 차트 확대 비율: ${Math.round(zoomLevel * 100)}%`);
+        }
+
+        function resetChartZoom() {
+            zoomLevel = 1.0;
+            rollercoasterChartInstance.options.scales.y.min = 0.300;
+            rollercoasterChartInstance.options.scales.y.max = 0.650;
+            rollercoasterChartInstance.options.scales.x.min = 0;
+            rollercoasterChartInstance.options.scales.x.max = 4;
+            rollercoasterChartInstance.update();
+            showToast("🔍 차트 비율이 초기 크기로 복원되었습니다.");
+        }
+
+        // Initialize Chart.js
+        function initChartJS() {
+            const ctx = document.getElementById('kboRollercoasterChart').getContext('2d');
+
+            const lineDatasets = KBO_TEAMS_DATA.map(team => {
+                const isHighlighted = DEFAULT_HIGHLIGHTED_TEAMS.includes(team.id);
+                activeDatasetsVisibility[team.id] = isHighlighted;
+
+                return {
+                    type: 'line',
+                    label: team.name,
+                    data: WIN_RATE_TRENDS[team.id].map((val, idx) => ({ x: idx, y: val })),
+                    borderColor: isHighlighted ? TEAM_COLORS_MAP[team.id] : '#CBD5E1',
+                    borderWidth: isHighlighted ? 3 : 1.5,
+                    borderDash: isHighlighted ? [] : [5, 5],
+                    backgroundColor: TEAM_COLORS_MAP[team.id] + '05',
+                    tension: 0.35,
+                    pointRadius: 1,
+                    pointHoverRadius: 4,
+                    pointHitRadius: 25, // Touch Target Scaled up
+                    teamId: team.id
+                };
+            });
+
+            // INFLECTION (Star Markers)
+            const inflectionPointsData = INFLECTION_POINTS.map(inflection => {
+                const rate = WIN_RATE_TRENDS[inflection.teamId][inflection.index];
+                return {
+                    x: inflection.index,
+                    y: rate,
+                    teamId: inflection.teamId,
+                    meta: inflection
+                };
+            });
+
+            const inflectionDataset = {
+                type: 'scatter',
+                label: '⭐️ 영웅 탄생 변곡점',
+                data: inflectionPointsData,
+                backgroundColor: '#FF6B00',
+                borderColor: '#FFD700',
+                borderWidth: 2,
+                pointRadius: 9,
+                pointHoverRadius: 12,
+                pointStyle: 'star',
+                pointHitRadius: 25,
+                isInflection: true
+            };
+
+            // CROSSING (Diamond Markers)
+            const crossings = findIntersections();
+            const crossingsData = crossings.map(crossing => ({
+                x: crossing.x,
+                y: crossing.y,
+                meta: crossing
+            }));
+
+            const crossingDataset = {
+                type: 'scatter',
+                label: '💎 순위 교차지점',
+                data: crossingsData,
+                backgroundColor: '#0052CC',
+                borderColor: '#FFFFFF',
+                borderWidth: 1.5,
+                pointRadius: 7,
+                pointHoverRadius: 10,
+                pointStyle: 'rectRot',
+                pointHitRadius: 25,
+                isCrossing: true
+            };
+
+            rollercoasterChartInstance = new Chart(ctx, {
+                data: {
+                    labels: CHART_LABELS,
+                    datasets: [...lineDatasets, inflectionDataset, crossingDataset]
+                },
+                plugins: [leftLabelsPlugin],
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    layout: {
+                        padding: { left: 55, right: 20 }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#FFFFFF',
+                            titleColor: '#0052CC',
+                            titleFont: { family: 'Pretendard', weight: 'bold' },
+                            bodyColor: '#334155',
+                            bodyFont: { family: 'Pretendard' },
+                            borderColor: '#E2E8F0',
+                            borderWidth: 1,
+                            padding: 10,
+                            callbacks: {
+                                label: function(context) {
+                                    const raw = context.raw;
+                                    if (context.dataset.isInflection) {
+                                        return `⭐️ ${raw.meta.title} (클릭하여 전술 로드)`;
+                                    }
+                                    if (context.dataset.isCrossing) {
+                                        return `💎 ${raw.meta.title} (클릭하여 토론 연동)`;
+                                    }
+                                    return `⚾ ${context.dataset.label}: ${raw.y.toFixed(3)}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            min: 0.300,
+                            max: 0.650,
+                            grid: { color: '#F1F5F9' },
+                            ticks: {
+                                color: '#64748B',
+                                font: { family: 'Pretendard', weight: 'bold' },
+                                padding: 15
+                            }
+                        },
+                        x: {
+                            type: 'linear',
+                            min: 0,
+                            max: 4,
+                            grid: { color: '#F1F5F9' },
+                            ticks: {
+                                stepSize: 1,
+                                color: '#475569',
+                                font: { family: 'Pretendard', weight: 'bold' },
+                                callback: function(value) { return CHART_LABELS[value]; }
+                            }
+                        }
+                    },
+                    onClick: function(e, activeElements) {
+                        if (activeElements.length > 0) {
+                            if (navigator.vibrate) {
+                                navigator.vibrate(20); // Mobile touch haptic vibe
+                            }
+                            const element = activeElements[0];
+                            const datasetIdx = element.datasetIndex;
+                            const dataIdx = element.index;
+                            const dataset = rollercoasterChartInstance.data.datasets[datasetIdx];
+
+                            if (dataset.isInflection) {
+                                const matched = dataset.data[dataIdx].meta;
+                                loadInflectionData(matched.teamId, matched.index);
+                            } else if (dataset.isCrossing) {
+                                const matched = dataset.data[dataIdx].meta;
+                                loadCrossingData(matched);
+                            }
+                        }
+                    }
+                }
+            });
+
+            renderCustomLegends();
+        }
+
+        function renderCustomLegends() {
+            const container = document.getElementById('chartLegendContainer');
+            container.innerHTML = '';
+
+            KBO_TEAMS_DATA.forEach(team => {
+                const isHighlighted = activeDatasetsVisibility[team.id];
+                const btn = document.createElement('button');
+                btn.className = `px-3 py-1.5 rounded-lg text-[10px] font-bold border transition-all flex items-center gap-1.5 ${isHighlighted ? 'bg-white text-slate-800 border-slate-300 shadow-sm' : 'bg-slate-100/40 text-slate-400 border-dashed border-slate-200'}`;
+                
+                const dot = `<span class="w-2.5 h-2.5 rounded-full inline-block" style="background-color: ${TEAM_COLORS_MAP[team.id]}"></span>`;
+                btn.innerHTML = `${dot} ${team.name.split(' ')[0]}`;
+                btn.onclick = () => toggleLine(team.id);
+                
+                container.appendChild(btn);
+            });
+        }
+
+        function toggleLine(teamId) {
+            const current = activeDatasetsVisibility[teamId];
+            activeDatasetsVisibility[teamId] = !current;
+
+            const idx = rollercoasterChartInstance.data.datasets.findIndex(d => d.type === 'line' && d.label === KBO_TEAMS_DATA.find(t => t.id === teamId).name);
+            if (idx !== -1) {
+                const dSet = rollercoasterChartInstance.data.datasets[idx];
+                dSet.borderColor = !current ? TEAM_COLORS_MAP[teamId] : '#CBD5E1';
+                dSet.borderWidth = !current ? 3 : 1.5;
+                dSet.borderDash = !current ? [] : [5, 5];
+                rollercoasterChartInstance.update();
+            }
+            renderCustomLegends();
+        }
+    </script>
+
+    <!-- TEST DNA COGNITIVE QUIZ FLOW & STORAGE (COOKIE/LOCALSTORAGE RETENTION) -->
+    <script>
+        let quizAnswers = { rational: 0, emotional: 0, solo: 0, social: 0 };
+        let currentQuizIndex = 0;
+
+        function loadQuizState() {
+            const savedResult = localStorage.getItem('kbo_dna_result');
+            const quizBox = document.getElementById('quizBox');
+
+            if (savedResult) {
+                const data = JSON.parse(savedResult);
+                renderDNASloganCard(data.title, data.desc, data.nickname, data.slogan);
+            } else {
+                renderQuizQuestion();
+            }
+        }
+
+        function renderQuizQuestion() {
+            const quizBox = document.getElementById('quizBox');
+            if (currentQuizIndex < QUIZ_QUESTIONS_DATA.length) {
+                const step = QUIZ_QUESTIONS_DATA[currentQuizIndex];
+                quizBox.innerHTML = `
+                    <div class="quiz-step text-center">
+                        <span class="text-brandBlue font-extrabold text-xs uppercase tracking-wider theme-bg-transition" id="quizStepText">Question ${String(currentQuizIndex + 1).padStart(2, '0')}</span>
+                        <h3 class="font-title text-lg sm:text-xl text-slate-800 mt-2 mb-6">${step.q}</h3>
+                        <div class="space-y-3">
+                            <button onclick="handleAnswer('A')" class="w-full bg-slate-50 hover:bg-slate-100 p-4 rounded-2xl border border-slate-100 text-slate-700 text-xs font-bold text-left transition-all">
+                                A. ${step.a}
+                            </button>
+                            <button onclick="handleAnswer('B')" class="w-full bg-slate-50 hover:bg-slate-100 p-4 rounded-2xl border border-slate-100 text-slate-700 text-xs font-bold text-left transition-all">
+                                B. ${step.b}
+                            </button>
+                        </div>
+                        <div class="mt-6 flex justify-between text-[10px] text-slate-400">
+                            <span>진행상황</span>
+                            <span>${currentQuizIndex + 1} / ${QUIZ_QUESTIONS_DATA.length}</span>
+                        </div>
+                    </div>
+                `;
+            } else {
+                evaluateQuizResult();
+            }
+        }
+
+        function handleAnswer(choice) {
+            const step = QUIZ_QUESTIONS_DATA[currentQuizIndex];
+            const weight = choice === 'A' ? step.scoreA : step.scoreB;
+
+            for (let axis in weight) {
+                quizAnswers[axis] = (quizAnswers[axis] || 0) + weight[axis];
+            }
+
+            if (navigator.vibrate) {
+                navigator.vibrate(15);
+            }
+
+            currentQuizIndex++;
+            renderQuizQuestion();
+        }
+
+        function evaluateQuizResult() {
+            let title = "", desc = "", nickname = "", slogan = "";
+
+            const isRational = (quizAnswers.rational || 0) >= (quizAnswers.emotional || 0);
+            const isSolo = (quizAnswers.solo || 0) >= (quizAnswers.social || 0);
+
+            if (isRational && isSolo) {
+                title = "📊 침착한 데이터 사냥꾼 (The Sabermetrician)";
+                desc = "매 경기 이성적인 수치와 세이버메트릭스, 승리기여도(WAR)를 탐구하며 야구 흐름을 한발 앞서 분석하는 완벽한 지성파 팬입니다!";
+                nickname = "KBO 정밀 분석반";
+                slogan = "어제 패배는 데이터의 3% 오차범위일 뿐!";
+            } else if (!isRational && !isSolo) {
+                title = "📣 목청 터지는 낭만 수호신 (The Romanticist)";
+                desc = "목소리가 쉴 때까지 선수 응원 가사를 부르고 찬스 순간마다 극강의 도파민을 느껴보는 열정 가득 가슴 뜨거운 심장파 팬입니다!";
+                nickname = "잠실 우렁찬 사자후";
+                slogan = "끝까지 소리 질러! 역전 홈런이다!";
+            } else if (!isRational && isSolo) {
+                title = "🍳 야구장 푸디 (The Stadium Gourmet)";
+                desc = "야구는 거들 뿐! 맛있는 구장 명물 먹거리에 심취하며 직관의 또 다른 진리를 찾아 떠나는 푸드 마스터 팬입니다!";
+                nickname = "사직구장 미식가";
+                slogan = "금강산도 식후경, 야구도 식후홈런!";
+            } else {
+                title = "🧠 방구석 뇌지컬 명장 (The Armchair Manager)";
+                desc = "감독의 투수 교체 타이밍, 번트 지시, 대타 작전을 매섭게 분석하고 논쟁하며 완벽한 수싸움을 즐기는 기획파 팬입니다!";
+                nickname = "엔트리 설계 전문가";
+                slogan = "내가 지휘봉 잡았으면 올스타전 진작 우승!";
+            }
+
+            const result = { title, desc, nickname, slogan };
+            localStorage.setItem('kbo_dna_result', JSON.stringify(result));
+
+            renderDNASloganCard(title, desc, nickname, slogan);
+        }
+
+        function renderDNASloganCard(title, desc, nickname, slogan) {
+            const quizBox = document.getElementById('quizBox');
+            quizBox.innerHTML = `
+                <div class="text-center animate-fade-in">
+                    <div class="w-20 h-20 mx-auto rounded-full bg-gradient-to-tr from-brandBlue to-brandOrange flex items-center justify-center text-white text-3xl mb-4 animate-bounce">
+                        <i class="fa-solid fa-graduation-cap"></i>
+                    </div>
+                    <span class="text-xs text-slate-400 font-extrabold block">TEST RESULT (디바이스 저장됨)</span>
+                    <h4 class="font-title text-2xl text-slate-900 mt-1 mb-2">${title}</h4>
+                    <p class="text-xs text-slate-500 leading-relaxed mb-6 max-w-md mx-auto">${desc}</p>
+                    
+                    <div class="border border-slate-200 rounded-2xl p-4 bg-slate-50 max-w-sm mx-auto mb-6">
+                        <svg viewBox="0 0 350 120" class="w-full h-auto rounded-xl shadow-inner bg-slate-900 text-white">
+                            <rect width="100%" height="100%" fill="#0F172A"/>
+                            <path d="M0,0 L350,120 M350,0 L0,120" stroke="#1E293B" stroke-width="2"/>
+                            <text x="50%" y="45" font-family="Gmarket Sans, sans-serif" font-weight="bold" font-size="14" fill="#FF6B00" text-anchor="middle" id="badgeSloganName">${nickname}</text>
+                            <text x="50%" y="75" font-family="Pretendard, sans-serif" font-weight="bold" font-size="16" fill="#FFFFFF" text-anchor="middle">${slogan}</text>
+                            <circle cx="320" cy="100" r="4" fill="#0052CC"/>
+                            <circle cx="330" cy="100" r="4" fill="#FF6B00"/>
+                        </svg>
+                    </div>
+
+                    <div class="flex gap-2 justify-center">
+                        <button onclick="resetQuizState()" class="px-5 py-2.5 rounded-xl bg-slate-200 text-slate-700 font-bold text-xs hover:bg-slate-300">다시 테스트</button>
+                        <button onclick="playStadiumChant(); showToast('📣 디지털 응원 뱃지가 클립보드에 가상 복사되었습니다!');" class="px-5 py-2.5 rounded-xl bg-brandBlue text-white font-bold text-xs hover:opacity-90 transition-all theme-bg-transition" id="btnBadgeShare">뱃지 공유</button>
+                    </div>
+                </div>
+            `;
+            const activeTeam = localStorage.getItem('kbo_my_team');
+            if (activeTeam) selectMyTeam(activeTeam);
+        }
+
+        function resetQuizState() {
+            localStorage.removeItem('kbo_dna_result');
+            quizAnswers = { rational: 0, emotional: 0, solo: 0, social: 0 };
+            currentQuizIndex = 0;
+            renderQuizQuestion();
+            showToast("🧹 테스트 내역이 성공적으로 초기화되었습니다.");
+        }
+    </script>
+
+    <!-- CORE INITIALIZERS AND DETAILED VIEWS -->
+    <script>
+        function initScheduleList(filter = 'all') {
+            const container = document.getElementById('scheduleListContainer');
+            container.innerHTML = '';
+
+            WEEKLY_SCHEDULE_DATA.forEach(match => {
+                if (filter !== 'all' && match.state !== filter) return;
+
+                const stateBadge = match.state === 'break'
+                    ? '<span class="bg-amber-100 text-amber-800 text-[9px] font-bold px-2 py-0.5 rounded">휴식기</span>' 
+                    : '<span class="bg-blue-100 text-brandBlue text-[9px] font-bold px-2 py-0.5 rounded theme-bg-transition" id="schedBadgeOpen">예정</span>';
+
+                const row = `
+                    <div class="flex flex-col sm:flex-row justify-between items-center bg-slate-50 p-4 rounded-2xl border border-slate-100 gap-3 hover:bg-slate-100/50 transition-all">
+                        <div class="text-xs text-slate-400 font-bold shrink-0">${match.date}</div>
+                        <div class="flex items-center gap-4 text-sm font-black">
+                            <span class="text-slate-700">${match.team1}</span>
+                            <span class="text-brandBlue font-mono text-base theme-bg-transition" id="schedScoreTeam1">${match.score1}</span>
+                            <span class="text-slate-300 font-normal">VS</span>
+                            <span class="text-brandOrange font-mono text-base theme-bg-transition" id="schedScoreTeam2">${match.score2}</span>
+                            <span class="text-slate-700">${match.team2}</span>
+                        </div>
+                        <div class="flex items-center gap-2 text-xs text-slate-400 shrink-0">
+                            <span>${match.stadium}</span>
+                            ${stateBadge}
+                        </div>
+                    </div>
+                `;
+                container.innerHTML += row;
+            });
+            const activeTeam = localStorage.getItem('kbo_my_team');
+            if (activeTeam) selectMyTeam(activeTeam);
+        }
+
+        function filterScheduleDay(dayType) {
+            document.querySelectorAll('.schedule-day-btn').forEach(btn => {
+                if (btn.getAttribute('data-day') === dayType) {
+                    btn.className = "schedule-day-btn bg-brandBlue text-white text-[10px] font-bold px-3 py-1.5 rounded-lg shadow-sm theme-bg-transition";
+                } else {
+                    btn.className = "schedule-day-btn bg-slate-100 text-slate-600 text-[10px] font-bold px-3 py-1.5 rounded-lg";
+                }
+            });
+            initScheduleList(dayType);
+        }
+
+        function handleHashRoute() {
+            let hash = window.location.hash || '#home';
+            const pageId = hash.replace('#', '');
+            
+            document.querySelectorAll('.page-view').forEach(view => {
+                view.classList.remove('active');
+            });
+            
+            const targetView = document.getElementById(`view-${pageId}`);
+            if (targetView) {
+                targetView.classList.add('active');
+            } else {
+                document.getElementById('view-home').classList.add('active');
+            }
+            
+            document.querySelectorAll('.nav-item').forEach(item => {
+                if (item.getAttribute('data-page') === pageId) {
+                    item.classList.add('text-brandBlue', 'bg-blue-50', 'font-black');
+                    item.classList.remove('text-slate-600');
+                    const activeTeam = localStorage.getItem('kbo_my_team');
+                    if (activeTeam) {
+                        const team = KBO_TEAMS_DATA.find(t => t.id === activeTeam);
+                        item.style.color = team.color;
+                        item.style.backgroundColor = `${team.color}08`;
+                    }
+                } else {
+                    item.classList.remove('text-brandBlue', 'bg-blue-50', 'font-black');
+                    item.classList.add('text-slate-600');
+                    item.style.color = '';
+                    item.style.backgroundColor = '';
+                }
+            });
+
+            if (pageId === 'rollercoaster') {
+                if (!rollercoasterChartInstance) {
+                    initChartJS();
+                }
+            } else if (pageId === 'schedule') {
+                initScheduleList();
+            } else if (pageId === 'quiz') {
+                loadQuizState();
+            }
+
+            window.scrollTo(0, 0);
+        }
+
+        function toggleMobileMenu() {
+            const menu = document.getElementById('mobileMenu');
+            menu.classList.toggle('hidden');
+        }
+
+        function closeMobileMenu() {
+            document.getElementById('mobileMenu').classList.add('hidden');
+        }
+
+        window.onload = function() {
+            window.addEventListener('hashchange', handleHashRoute);
+            initTeamGrid();
+            initTeamFilters();
+            handleHashRoute();
+            
+            const storedTeam = localStorage.getItem('kbo_my_team');
+            if (storedTeam) {
+                selectMyTeam(storedTeam);
+            }
+            
+            loadInflectionData('samsung', 2);
+        };
+
+        function initTeamGrid() {
+            const container = document.getElementById('teamsGrid');
+            container.innerHTML = '';
+
+            KBO_TEAMS_DATA.forEach(team => {
+                let mvpListHtml = '';
+                team.mvps.forEach((mvp, idx) => {
+                    mvpListHtml += `
+                        <button onclick="openPlayerModal('${team.id}', ${idx})" class="w-full bg-slate-50 hover:bg-blue-50/50 p-2.5 rounded-xl border border-slate-100 text-left transition-all flex justify-between items-center group">
+                            <div>
+                                <span class="text-[9px] bg-brandBlue/10 text-brandBlue px-1.5 py-0.5 rounded font-black card-label-blue">${mvp.pos}</span>
+                                <h5 class="text-xs font-black text-slate-800 group-hover:text-brandBlue mt-0.5 transition-colors">${mvp.name} <i class="fa-solid fa-arrow-up-right-from-square text-[9px] opacity-0 group-hover:opacity-100 transition-opacity"></i></h5>
+                            </div>
+                            <div class="text-right shrink-0">
+                                <span class="text-xs font-bold text-brandOrange block card-label-orange">${mvp.stats.main}</span>
+                                <span class="text-[9px] text-slate-400 block">${mvp.stats.sub1}</span>
+                            </div>
+                        </button>
+                    `;
+                });
+
+                const cardHtml = `
+                    <div id="team-card-${team.id}" class="team-card bg-white border border-slate-200 hover:border-brandBlue rounded-2xl p-5 transition-all duration-300 shadow-sm" data-team-id="${team.id}">
+                        <div class="flex items-center justify-between mb-3 pb-3 border-b border-slate-100">
+                            <div>
+                                <span class="text-[9px] text-brandOrange font-bold tracking-wider card-label-orange"><i class="fa-solid fa-location-dot"></i> ${team.origin} 연고</span>
+                                <h3 class="font-title text-base text-slate-900 mt-0.5">${team.name}</h3>
+                            </div>
+                            <div class="p-1 rounded-xl bg-slate-50 border border-slate-100">
+                                ${team.logoSvg}
+                            </div>
+                        </div>
+                        <p class="text-xs text-slate-500 mb-3 h-10 overflow-y-auto leading-relaxed">${team.desc}</p>
+                        <div class="grid grid-cols-2 gap-2 mb-3 bg-slate-50 p-2.5 rounded-xl border border-slate-100 text-center">
+                            <div>
+                                <span class="text-[9px] text-slate-400 block">역대 우승</span>
+                                <strong class="text-xs text-slate-800">${team.totalChampionships}</strong>
+                            </div>
+                            <div>
+                                <span class="text-[9px] text-slate-400 block">최근 우승</span>
+                                <strong class="text-xs text-brandOrange card-label-orange">${team.lastChampionship}</strong>
+                            </div>
+                        </div>
+                        <div class="space-y-1.5">
+                            <span class="text-[10px] text-slate-400 font-bold block"><i class="fa-solid fa-user-ninja text-brandBlue mr-1 card-label-blue"></i> 추천 핵심 MVP</span>
+                            ${mvpListHtml}
+                        </div>
+                    </div>
+                `;
+                container.innerHTML += cardHtml;
+            });
+            const activeTeam = localStorage.getItem('kbo_my_team');
+            if (activeTeam) selectMyTeam(activeTeam);
+        }
+
+        function initTeamFilters() {
+            const filterContainer = document.getElementById('teamFilterContainer');
+            KBO_TEAMS_DATA.forEach(team => {
+                const btn = document.createElement('button');
+                btn.className = 'team-filter-btn px-4 py-2 rounded-full text-xs font-bold transition-all bg-white text-slate-500 border border-slate-200 hover:border-brandBlue hover:text-brandBlue shadow-sm';
+                btn.textContent = team.name.split(' ')[0];
+                btn.setAttribute('data-team', team.id);
+                btn.onclick = () => filterTeam(team.id);
+                filterContainer.appendChild(btn);
+            });
+        }
+
+        function filterTeam(teamId) {
+            document.querySelectorAll('.team-filter-btn').forEach(btn => {
+                if (btn.getAttribute('data-team') === teamId) {
+                    btn.classList.add('bg-brandBlue', 'text-white');
+                    btn.classList.remove('bg-white', 'text-slate-500');
+                } else {
+                    btn.classList.remove('bg-brandBlue', 'text-white');
+                    btn.classList.add('bg-white', 'text-slate-500');
+                }
+            });
+
+            document.querySelectorAll('.team-card').forEach(card => {
+                const cardId = card.getAttribute('data-team-id');
+                if (teamId === 'all' || cardId === teamId) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+            const activeTeam = localStorage.getItem('kbo_my_team');
+            if (activeTeam) selectMyTeam(activeTeam);
+        }
+
+        function openPlayerModal(teamId, playerIdx) {
+            const team = KBO_TEAMS_DATA.find(t => t.id === teamId);
+            const player = team.mvps[playerIdx];
+
+            document.getElementById('modalPlayerName').textContent = player.name;
+            document.getElementById('modalPlayerTeam').textContent = team.name;
+            document.getElementById('modalPlayerPos').textContent = player.pos;
+            document.getElementById('modalPlayerHighlight').textContent = player.highlight;
+
+            const statsContainer = document.getElementById('modalPlayerStatsContainer');
+            statsContainer.innerHTML = '';
+
+            if (player.type === 'batter') {
+                statsContainer.innerHTML = `
+                    <div class="bg-blue-50/50 p-2 rounded-xl text-center border border-blue-100 theme-bg-transition" id="modalStatBox">
+                        <span class="text-[9px] text-slate-400 block">타율</span>
+                        <strong class="text-xs text-brandBlue theme-bg-transition" id="modalStatValue">${player.stats.main}</strong>
+                    </div>
+                    <div class="bg-slate-50 p-2 rounded-xl text-center border border-slate-100">
+                        <span class="text-[9px] text-slate-400 block">홈런</span>
+                        <strong class="text-xs text-slate-800">${player.stats.sub1}</strong>
+                    </div>
+                    <div class="bg-slate-50 p-2 rounded-xl text-center border border-slate-100">
+                        <span class="text-[9px] text-slate-400 block">타점</span>
+                        <strong class="text-xs text-slate-800">${player.stats.sub2}</strong>
+                    </div>
+                `;
+            } else {
+                statsContainer.innerHTML = `
+                    <div class="bg-blue-50/50 p-2 rounded-xl text-center border border-blue-100 theme-bg-transition" id="modalStatBox">
+                        <span class="text-[9px] text-slate-400 block">전적</span>
+                        <strong class="text-xs text-brandBlue theme-bg-transition" id="modalStatValue">${player.stats.main}</strong>
+                    </div>
+                    <div class="bg-slate-50 p-2 rounded-xl text-center border border-slate-100">
+                        <span class="text-[9px] text-slate-400 block">ERA</span>
+                        <strong class="text-xs text-slate-800">${player.stats.sub1}</strong>
+                    </div>
+                    <div class="bg-slate-50 p-2 rounded-xl text-center border border-slate-100">
+                        <span class="text-[9px] text-slate-400 block">삼진</span>
+                        <strong class="text-xs text-slate-800">${player.stats.sub2}</strong>
+                    </div>
+                `;
+            }
+
+            const modal = document.getElementById('playerModal');
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            modal.children[0].classList.remove('scale-95');
+            modal.children[0].classList.add('scale-100');
+
+            const activeTeam = localStorage.getItem('kbo_my_team');
+            if (activeTeam) selectMyTeam(activeTeam);
+        }
+
+        function closePlayerModal() {
+            const modal = document.getElementById('playerModal');
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            modal.children[0].classList.remove('scale-100');
+            modal.children[0].classList.add('scale-95');
+        }
+
+        function loadInflectionData(teamId, dataIndex) {
+            const inflection = INFLECTION_POINTS.find(i => i.teamId === teamId && i.index === dataIndex);
+            if (!inflection) return;
+
+            const area = document.getElementById('inflectionDisplayArea');
+            area.classList.remove('hidden');
+
+            document.getElementById('inflectionTitle').textContent = inflection.title;
+            document.getElementById('inflectionMvpName').textContent = inflection.mvpName;
+            document.getElementById('inflectionDate').textContent = inflection.date;
+            document.getElementById('inflectionMatchSummary').textContent = inflection.matchSummary;
+            document.getElementById('inflectionStory').textContent = inflection.story;
+            document.getElementById('inflectionImpact').textContent = inflection.impact;
+
+            document.getElementById('highlightVideoIframe').src = inflection.videoUrl;
+            renderComments(inflection.comments);
+
+            const activeTeam = localStorage.getItem('kbo_my_team');
+            if (activeTeam) selectMyTeam(activeTeam);
+        }
+
+        function loadCrossingData(crossing) {
+            const area = document.getElementById('inflectionDisplayArea');
+            area.classList.remove('hidden');
+
+            document.getElementById('inflectionTitle').textContent = crossing.title;
+            document.getElementById('inflectionMvpName').textContent = '두 구단 공동 연출';
+            document.getElementById('inflectionDate').textContent = crossing.date;
+            document.getElementById('inflectionMatchSummary').textContent = `${crossing.team1Name.split(' ')[0]} 대 ${crossing.team2Name.split(' ')[0]} 격돌`;
+            document.getElementById('inflectionStory').textContent = '두 구단의 전술 역량과 실력이 합치된 교차점입니다. 뜨거웠던 리액션과 맞대결 분석 지표를 연계 확인하세요.';
+            document.getElementById('inflectionImpact').textContent = '순위 재배치';
+
+            document.getElementById('highlightVideoIframe').src = 'https://www.youtube-nocookie.com/embed/Zzu5_Hgy-0c?rel=0';
+            renderComments(crossing.comments);
+
+            const activeTeam = localStorage.getItem('kbo_my_team');
+            if (activeTeam) selectMyTeam(activeTeam);
+        }
+
+        function closeInflectionCard() {
+            document.getElementById('inflectionDisplayArea').classList.add('hidden');
+        }
+
+        const DEFAULT_COMMENTS_POOL = [
+            { user: '대구라이온', platform: '네이버', text: '삼성이 결국 1위를 지키는구나! 후반기도 전원 진격 가자!', likes: 145 },
+            { user: '잠실의기적', platform: '네이버', text: '오스틴 퀄리티 대박 ㅋㅋㅋ 엘지 가을야구 무조건이다.', likes: 122 },
+            { user: '수원박사', platform: '네이버', text: '고영표 던질 때는 야구가 너무 단순하고 명확함.', likes: 98 },
+            { user: '야구마니아', platform: 'MLBPARK', text: '올해 순위경쟁 촘촘해서 역대 최고 꿀잼 시즌 확정임.', likes: 230 },
+            { user: 'KBO정밀분석', platform: 'MLBPARK', text: '삼성 불펜 방어율 지표가 후반기 승부처 결정지을 듯.', likes: 185 },
+            { user: '마운드킹', platform: 'MLBPARK', text: '기아 김도영 40-40 페이스가 리그 흥행 완전 견인하네.', likes: 154 }
+        ];
+
+        function renderComments(commentsList = null) {
+            const container = document.getElementById('commentsStreamContainer');
+            container.innerHTML = '';
+            const list = commentsList && commentsList.length > 0 ? commentsList : DEFAULT_COMMENTS_POOL;
+
+            list.forEach(comment => {
+                const isMlb = comment.platform === 'MLBPARK';
+                const badge = isMlb ? 'bg-blue-100 text-brandBlue' : 'bg-emerald-100 text-emerald-800';
+
+                const row = `
+                    <div class="bg-slate-50 p-3 rounded-xl border border-slate-100 text-xs">
+                        <div class="flex justify-between items-center mb-1">
+                            <div class="flex items-center gap-1.5">
+                                <span class="text-[9px] ${badge} font-black px-1.5 py-0.5 rounded-full theme-bg-transition" id="commentBadgePlatform">${comment.platform}</span>
+                                <strong class="text-slate-700">${comment.user}</strong>
+                            </div>
+                            <span class="text-[10px] text-slate-400"><i class="fa-solid fa-thumbs-up"></i> ${comment.likes}</span>
+                        </div>
+                        <p class="text-slate-600 leading-normal font-medium">${comment.text}</p>
+                    </div>
+                `;
+                container.innerHTML += row;
+            });
+            const activeTeam = localStorage.getItem('kbo_my_team');
+            if (activeTeam) selectMyTeam(activeTeam);
+        }
+
+        function handleCommentSubmit(event) {
+            event.preventDefault();
+            const nickname = document.getElementById('inputNick').value;
+            const content = document.getElementById('inputContent').value;
+
+            if (!nickname || !content) return;
+
+            const container = document.getElementById('commentsStreamContainer');
+            const row = document.createElement('div');
+            row.className = "bg-blue-50/50 p-3 rounded-xl border border-blue-100 text-xs animate-pulse";
+            row.innerHTML = `
+                <div class="flex justify-between items-center mb-1">
+                    <div class="flex items-center gap-1.5">
+                        <span class="text-[9px] bg-emerald-100 text-emerald-800 font-black px-1.5 py-0.5 rounded-full">네이버</span>
+                        <strong class="text-slate-700">${nickname} (나)</strong>
+                    </div>
+                    <span class="text-[10px] text-slate-400"><i class="fa-solid fa-thumbs-up"></i> 1</span>
+                </div>
+                <p class="text-slate-600 leading-normal font-medium">${content}</p>
+            `;
+            container.insertBefore(row, container.firstChild);
+            document.getElementById('inputContent').value = '';
+            showToast("📝 익명 리액션 피드가 등록되었습니다!");
+            const activeTeam = localStorage.getItem('kbo_my_team');
+            if (activeTeam) selectMyTeam(activeTeam);
+        }
+
+        function submitChallengeVote(type) {
+            playStadiumChant();
+            localStorage.setItem('kbo_challenge_badge_2026', 'unlocked');
+            document.getElementById('challengeVoteContainer').classList.add('hidden');
+            document.getElementById('unlockedBadgeBox').classList.remove('hidden');
+            showToast("🎁 승률 예측 투표 완료! 가상의 정밀 분석 뱃지가 연동되었습니다.");
+        }
+
+        function syncNaverSportsAPI() {
+            const spinner = document.getElementById('syncSpinner');
+            const staticIcon = document.getElementById('syncStaticIcon');
+            const btnText = document.getElementById('syncBtnText');
+
+            spinner.classList.remove('hidden');
+            staticIcon.classList.add('hidden');
+            btnText.textContent = "네이버 스포츠 일정 동기화 중...";
+
+            playStadiumChant();
+
+            setTimeout(() => {
+                spinner.classList.add('hidden');
+                staticIcon.classList.remove('hidden');
+                btnText.textContent = "네이버 실시간 데이터 동기화";
+                document.getElementById('syncTimeBadge').textContent = "데이터 검증: 방금 전";
+                showToast("✅ 네이버 스포츠 KBO 공식 2026 경기일정 연동 완료!");
+
+                if (rollercoasterChartInstance) {
+                    rollercoasterChartInstance.destroy();
+                    initChartJS();
+                }
+                const activeTeam = localStorage.getItem('kbo_my_team');
+                if (activeTeam) selectMyTeam(activeTeam);
+            }, 1200);
+        }
+
+        // Dual Track Video Canvas Simulation Switcher
+        let canvasAnimationId = null;
+        let pitchType = null;
+        let ballRadius = 6;
+        let animProgress = 0;
+
+        function switchVideoView(mode) {
+            const videoBtn = document.getElementById('btnVideoMode');
+            const canvasBtn = document.getElementById('btnCanvasMode');
+            const videoCont = document.getElementById('videoContainer');
+            const canvasCont = document.getElementById('canvasContainer');
+
+            if (mode === 'video') {
+                videoBtn.className = "bg-white text-slate-800 px-3 py-1 rounded-lg shadow-sm";
+                canvasBtn.className = "text-slate-500 hover:text-slate-800 px-3 py-1 rounded-lg";
+                videoCont.classList.remove('hidden');
+                canvasCont.classList.add('hidden');
+                cancelAnimationFrame(canvasAnimationId);
+            } else {
+                canvasBtn.className = "bg-white text-slate-800 px-3 py-1 rounded-lg shadow-sm";
+                videoBtn.className = "text-slate-500 hover:text-slate-800 px-3 py-1 rounded-lg";
+                canvasCont.classList.remove('hidden');
+                videoCont.classList.add('hidden');
+                initCanvasAnimation();
+            }
+        }
+
+        function initCanvasAnimation() {
+            const canvas = document.getElementById('tacticalPlayCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = canvas.parentElement.clientHeight;
+
+            function drawTacticalBoard() {
+                ctx.fillStyle = '#0F172A';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                const szWidth = 140;
+                const szHeight = 180;
+                const szX = (canvas.width - szWidth) / 2;
+                const szY = (canvas.height - szHeight) / 2;
+
+                ctx.strokeStyle = '#1E293B';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(szX, szY, szWidth, szHeight);
+                ctx.fillStyle = '#1E293B30';
+                ctx.fillRect(szX, szY, szWidth, szHeight);
+
+                ctx.strokeStyle = '#334155';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(szX + szWidth/3, szY); ctx.lineTo(szX + szWidth/3, szY + szHeight);
+                ctx.moveTo(szX + 2*szWidth/3, szY); ctx.lineTo(szX + 2*szWidth/3, szY + szHeight);
+                ctx.moveTo(szX, szY + szHeight/3); ctx.lineTo(szX + szWidth, szY + szHeight/3);
+                ctx.moveTo(szX, szY + 2*szHeight/3); ctx.lineTo(szX + szWidth, szY + 2*szHeight/3);
+                ctx.stroke();
+
+                const startX = canvas.width / 2;
+                const startY = canvas.height - 40;
+
+                ctx.fillStyle = '#FF6B00';
+                ctx.beginPath();
+                ctx.arc(startX, startY, 5, 0, Math.PI*2);
+                ctx.fill();
+
+                if (pitchType) {
+                    animProgress += 0.025;
+                    if (animProgress > 1) animProgress = 1;
+
+                    let targetX = canvas.width / 2;
+                    let targetY = canvas.height / 2;
+
+                    if (pitchType === 'fastball') {
+                        targetX = canvas.width / 2 - 20;
+                        targetY = canvas.height / 2 - 30;
+                    } else if (pitchType === 'slider') {
+                        targetX = canvas.width / 2 + 50;
+                        targetY = canvas.height / 2 + 40;
+                    }
+
+                    const currentX = startX + (targetX - startX) * animProgress;
+                    const currentY = startY + (targetY - startY) * animProgress;
+
+                    ctx.strokeStyle = '#0052CC70';
+                    ctx.lineWidth = 3;
+                    ctx.setLineDash([4, 4]);
+                    ctx.beginPath();
+                    ctx.moveTo(startX, startY);
+                    ctx.lineTo(currentX, currentY);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+
+                    ctx.fillStyle = '#FFFFFF';
+                    ctx.beginPath();
+                    ctx.arc(currentX, currentY, ballRadius + (1 - animProgress)*4, 0, Math.PI*2);
+                    ctx.fill();
+                    ctx.strokeStyle = '#CE0E2D';
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+
+                    if (animProgress === 1) {
+                        ctx.fillStyle = '#FF6B00';
+                        ctx.font = 'bold 12px Pretendard';
+                        ctx.fillText(pitchType === 'fastball' ? 'STRIKE! 152km/h Fastball' : 'BALL! 138km/h Slider', targetX - 40, targetY - 15);
+                    }
+                } else {
+                    ctx.fillStyle = '#64748B';
+                    ctx.font = 'bold 12px Pretendard';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('우측 상단의 투구 방식을 선택하세요', canvas.width / 2, canvas.height / 2 + 110);
+                }
+
+                canvasAnimationId = requestAnimationFrame(drawTacticalBoard);
+            }
+
+            drawTacticalBoard();
+        }
+
+        function triggerPitchSimulation(type) {
+            pitchType = type;
+            animProgress = 0;
+            showToast(`⚾ 투수의 ${type === 'fastball' ? '직구' : '슬라이더'} 궤적이 시뮬레이션됩니다!`);
+        }
+    </script>
+</body>
+</html>
