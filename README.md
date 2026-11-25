@@ -1,3 +1,5 @@
+![KBO Dashboard — project overview](docs/images/project-cover.svg)
+
 # 2026 KBO 승률 저장소
 
 **야구 구단 정보와 승률 데이터를 인터랙티브하게 탐색하는 단일 HTML 웹페이지**
